@@ -11,7 +11,7 @@ class FreeUScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        with gr.Accordion(open=False, label="FreeU"):
+        with gr.Accordion(open=False, label=self.title()):
             with gr.Row():
                 enabled = gr.Checkbox(
                     label="Enable",
