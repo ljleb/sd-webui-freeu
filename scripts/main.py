@@ -5,7 +5,7 @@ from lib_free_u import global_state, unet, xyz_grid
 
 class FreeUScript(scripts.Script):
     def title(self):
-        return "Free U"
+        return "FreeU"
 
     def show(self, is_img2img):
         return scripts.AlwaysVisible
