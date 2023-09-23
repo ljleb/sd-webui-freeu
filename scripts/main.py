@@ -34,6 +34,12 @@ class FreeUScript(scripts.Script):
                     maximum=3,
                     value=0.9,
                 )
+                o0 = gr.Slider(
+                    label="Backbone 1 Offset",
+                    minimum=0,
+                    maximum=1,
+                    value=0,
+                )
             with gr.Accordion(open=True, label="Block 2"):
                 b1 = gr.Slider(
                     label="Backbone 2 Scale",
@@ -47,19 +53,26 @@ class FreeUScript(scripts.Script):
                     maximum=3,
                     value=0.2,
                 )
+                o1 = gr.Slider(
+                    label="Backbone 2 Offset",
+                    minimum=0,
+                    maximum=1,
+                    value=0,
+                )
 
-        def reset_to_defaults():
-            return 1.2, 0.9, 1.4, 0.2
+        def set_def_callback():
+            return 1.2,0.9,0,1.4,0.2,0
 
-        set_def.click(reset_to_defaults, outputs=[b0, s0, b1, s1])
+        set_def.click(set_def_callback, outputs=[b0, s0, o0, b1, s1, o1])
 
-        return enabled, b0, s0, b1, s1
+        return enabled, b0, s0, o0, b1, s1, o1
 
-    def process(self, p, enabled: bool, b0: float, s0: float, b1: float, s1: float):
+    def process(self, p, enabled: bool, b0: float, s0: float, o0: float, b1: float, s1: float, o1: float):
         global_state.update(
             enabled=enabled,
             backbone_factors=[b0, b1],
             skip_factors=[s0, s1],
+            backbone_offset=[o0, o1],
         )
         global_state.xyz_locked_attrs.clear()
 
