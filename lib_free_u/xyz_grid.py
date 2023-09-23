@@ -7,11 +7,11 @@ from lib_free_u import global_state
 def patch():
     xyz_module = find_xyz_module()
     xyz_module.axis_options.extend([
-        xyz_module.AxisOption("[Free U] Enabled", str_to_bool, apply_global_state("enabled"), choices=choices_bool),
-        xyz_module.AxisOption("[Free U] Block 1 Backbone Scale", float, apply_global_state("b0")),
-        xyz_module.AxisOption("[Free U] Block 1 Skip Scale", float, apply_global_state("s0")),
-        xyz_module.AxisOption("[Free U] Block 2 Backbone Scale", float, apply_global_state("b1")),
-        xyz_module.AxisOption("[Free U] Block 2 Skip Scale", float, apply_global_state("s1")),
+        xyz_module.AxisOption("[FreeU] Enabled", str_to_bool, apply_global_state("enabled"), choices=choices_bool),
+        xyz_module.AxisOption("[FreeU] Block 1 Backbone Scale", float, apply_global_state("b0")),
+        xyz_module.AxisOption("[FreeU] Block 1 Skip Scale", float, apply_global_state("s0")),
+        xyz_module.AxisOption("[FreeU] Block 2 Backbone Scale", float, apply_global_state("b1")),
+        xyz_module.AxisOption("[FreeU] Block 2 Skip Scale", float, apply_global_state("s1")),
     ])
 
 
