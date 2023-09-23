@@ -88,7 +88,7 @@ class FreeUScript(scripts.Script):
         infotext_component = gr.HTML(visible=False, interactive=False)
 
         infotext_component.change(
-            fn=self.on_update_scales,
+            fn=self.on_infotext_update,
             inputs=[infotext_component],
             outputs=[infotext_component, b0, s0, o0, w0, b1, s1, o1, w1],
         )
@@ -100,7 +100,7 @@ class FreeUScript(scripts.Script):
 
         return enabled, b0, s0, o0, w0, b1, s1, o1, w1
 
-    def on_update_scales(self, infotext):
+    def on_infotext_update(self, infotext):
         if not infotext:
             return (gr.skip(),) * 9
 
