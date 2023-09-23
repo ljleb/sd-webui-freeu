@@ -4,28 +4,6 @@ from sgm.modules.diffusionmodules import openaimodel as openaimodel_sdxl
 from modules.sd_hijack_unet import th as torch
 
 
-def Fourier_filter(x, threshold, scale):
-    # FFT
-    x = x.to(dtype=torch.float32)
-    x_freq = torch.fft.fftn(x, dim=(-2, -1))
-    x_freq = torch.fft.fftshift(x_freq, dim=(-2, -1))
-
-    B, C, H, W = x_freq.shape
-    mask = torch.ones((B, C, H, W)).cuda()
-
-    crow, ccol = H // 2, W // 2
-    mask[..., crow - threshold:crow + threshold, ccol - threshold:ccol + threshold] = scale
-    x_freq = x_freq * mask
-
-    # IFFT
-    x_freq = torch.fft.ifftshift(x_freq, dim=(-2, -1))
-    x_filtered = torch.fft.ifftn(x_freq, s=(x.shape[-2], x.shape[-1])).real
-
-    x_filtered = x_filtered.to(dtype=torch.float16)
-
-    return x_filtered
-
-
 class UNetModel(openaimodel.UNetModel):
     """
     copied from repositories.stable-diffusion-stability-ai.ldm.modules.diffusionmodules.openaimodel
@@ -60,19 +38,7 @@ class UNetModel(openaimodel.UNetModel):
             hs.append(h)
         h = self.middle_block(h, emb, context)
         for module in self.output_blocks:
-            hs_ = hs.pop()
-
-            # --------------- FreeU code -----------------------
-            # Only operate on the first two stages
-            if h.shape[1] == 1280:
-                h[:, :640] = h[:, :640] * global_state.backbone_factors[0]
-                hs_ = Fourier_filter(hs_, threshold=1, scale=global_state.skip_factors[0])
-            if h.shape[1] == 640:
-                h[:, :320] = h[:, :320] * global_state.backbone_factors[1]
-                hs_ = Fourier_filter(hs_, threshold=1, scale=global_state.skip_factors[1])
-            # ---------------------------------------------------------
-
-            h = torch.cat([h, hs_], dim=1)
+            h = free_u_cat(h, hs.pop())
             h = module(h, emb, context)
         h = h.type(x.dtype)
         if self.predict_codebook_ids:
@@ -81,7 +47,7 @@ class UNetModel(openaimodel.UNetModel):
             return self.out(h)
 
 
-class SDXLUNetModel(openaimodel_sdxl.UNetModel):
+class SdxlUNetModel(openaimodel_sdxl.UNetModel):
     """
     copied from repositories.generative-models.sgm.modules.diffusionmodules.openaimodel
     """
@@ -96,7 +62,7 @@ class SDXLUNetModel(openaimodel_sdxl.UNetModel):
         :return: an [N x C x ...] Tensor of outputs.
         """
         if not global_state.enabled:
-            return OriginalSDXLUNetModel.forward(self, x, timesteps, context, y, **kwargs)
+            return OriginalSdxlUNetModel.forward(self, x, timesteps, context, y, **kwargs)
 
         assert (y is not None) == (
             self.num_classes is not None
@@ -116,19 +82,7 @@ class SDXLUNetModel(openaimodel_sdxl.UNetModel):
             hs.append(h)
         h = self.middle_block(h, emb, context)
         for module in self.output_blocks:
-            hs_ = hs.pop()
-
-            # --------------- FreeU code -----------------------
-            # Only operate on the first two stages
-            if h.shape[1] == 1280:
-                h[:, :640] = h[:, :640] * global_state.backbone_factors[0]
-                hs_ = Fourier_filter(hs_, threshold=1, scale=global_state.skip_factors[0])
-            if h.shape[1] == 640:
-                h[:, :320] = h[:, :320] * global_state.backbone_factors[1]
-                hs_ = Fourier_filter(hs_, threshold=1, scale=global_state.skip_factors[1])
-            # ---------------------------------------------------------
-
-            h = torch.cat([h, hs_], dim=1)
+            h = free_u_cat(h, hs.pop())
             h = module(h, emb, context)
         h = h.type(x.dtype)
         if self.predict_codebook_ids:
@@ -137,10 +91,43 @@ class SDXLUNetModel(openaimodel_sdxl.UNetModel):
             return self.out(h)
 
 
+def free_u_cat(h, h_skip):
+    if h.shape[1] == 1280:
+        h[:, :640] = h[:, :640] * global_state.backbone_factors[0]
+        h_skip = filter_skip(h_skip, threshold=1, scale=global_state.skip_factors[0])
+    if h.shape[1] == 640:
+        h[:, :320] = h[:, :320] * global_state.backbone_factors[1]
+        h_skip = filter_skip(h_skip, threshold=1, scale=global_state.skip_factors[1])
+
+    return torch.cat([h, h_skip], dim=1)
+
+
+def filter_skip(x, threshold, scale):
+    # FFT
+    x = x.to(dtype=torch.float32)
+    x_freq = torch.fft.fftn(x, dim=(-2, -1))
+    x_freq = torch.fft.fftshift(x_freq, dim=(-2, -1))
+
+    B, C, H, W = x_freq.shape
+    mask = torch.ones((B, C, H, W)).cuda()
+
+    crow, ccol = H // 2, W // 2
+    mask[..., crow - threshold:crow + threshold, ccol - threshold:ccol + threshold] = scale
+    x_freq = x_freq * mask
+
+    # IFFT
+    x_freq = torch.fft.ifftshift(x_freq, dim=(-2, -1))
+    x_filtered = torch.fft.ifftn(x_freq, s=(x.shape[-2], x.shape[-1])).real
+
+    x_filtered = x_filtered.to(dtype=torch.float16)
+
+    return x_filtered
+
+
 OriginalUNetModel = openaimodel.UNetModel
-OriginalSDXLUNetModel = openaimodel_sdxl.UNetModel
+OriginalSdxlUNetModel = openaimodel_sdxl.UNetModel
 
 
 def patch_model():
     openaimodel.UNetModel = UNetModel
-    openaimodel_sdxl.UNetModel = SDXLUNetModel
+    openaimodel_sdxl.UNetModel = SdxlUNetModel
