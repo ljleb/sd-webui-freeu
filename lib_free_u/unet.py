@@ -1,3 +1,5 @@
+import math
+from typing import Tuple
 from lib_free_u import global_state
 from ldm.modules.diffusionmodules import openaimodel
 try:
@@ -98,12 +100,21 @@ if openaimodel_sdxl:
 
 
 def free_u_cat(h, h_skip):
-    if h.shape[1] == 1280:
-        h[:, :640] = h[:, :640] * global_state.backbone_factors[0]
-        h_skip = filter_skip(h_skip, threshold=1, scale=global_state.skip_factors[0])
-    if h.shape[1] == 640:
-        h[:, :320] = h[:, :320] * global_state.backbone_factors[1]
-        h_skip = filter_skip(h_skip, threshold=1, scale=global_state.skip_factors[1])
+    dims = h.shape[1]
+    try:
+        index = [1280, 640].index(dims)
+    except ValueError:
+        index = None
+
+    if index is not None:
+        redion_begin, region_end, region_inverted = ratio_to_region(global_state.backbone_widths[index], global_state.backbone_offsets[index], dims)
+        mask = torch.arange(dims)
+        mask = (redion_begin <= mask) & (mask <= region_end)
+        if region_inverted:
+            mask = ~mask
+
+        h[:, mask] *= global_state.backbone_factors[index]
+        h_skip = filter_skip(h_skip, threshold=1, scale=global_state.skip_factors[index])
 
     return torch.cat([h, h_skip], dim=1)
 
@@ -125,6 +136,28 @@ def filter_skip(x, threshold, scale):
     x_filtered = torch.fft.ifftn(x_freq, dim=(-2, -1)).real.to(dtype=x.dtype)
 
     return x_filtered
+
+
+def ratio_to_region(width: float, offset: float, n: int) -> Tuple[int, int, bool]:
+    if width < 0:
+        offset += width
+        width = -width
+    width = min(width, 1)
+
+    if offset < 0:
+        offset = 1 + offset - int(offset)
+    offset = math.fmod(offset, 1.0)
+
+    if width + offset <= 1:
+        inverted = False
+        start = offset * n
+        end = (width + offset) * n
+    else:
+        inverted = True
+        start = (width + offset - 1) * n
+        end = offset * n
+
+    return round(start), round(end), inverted
 
 
 OriginalUNetModel = openaimodel.UNetModel
