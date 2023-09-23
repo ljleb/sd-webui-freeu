@@ -1,105 +1,22 @@
+import functools
 import math
+import pathlib
+import sys
 from typing import Tuple
 from lib_free_u import global_state
-from ldm.modules.diffusionmodules import openaimodel
-try:
-    from sgm.modules.diffusionmodules import openaimodel as openaimodel_sdxl
-except ImportError:
-    openaimodel_sdxl = None
+from modules import scripts
+from modules.sd_hijack_unet import th
+import torch
 
 
-from modules.sd_hijack_unet import th as torch
+def free_u_cat_hijack(hs, *args, original_function, **kwargs):
+    try:
+        h, h_skip = hs
+        if list(kwargs.keys()) != ["dim"] or kwargs.get("dim", -1) != 1:
+            raise ValueError
+    except ValueError:
+        return original_function(hs, *args, **kwargs)
 
-
-class UNetModel(openaimodel.UNetModel):
-    """
-    copied from repositories.stable-diffusion-stability-ai.ldm.modules.diffusionmodules.openaimodel
-    """
-
-    def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
-        """
-        Apply the model to an input batch.
-        :param x: an [N x C x ...] Tensor of inputs.
-        :param timesteps: a 1-D batch of timesteps.
-        :param context: conditioning plugged in via crossattn
-        :param y: an [N] Tensor of labels, if class-conditional.
-        :return: an [N x C x ...] Tensor of outputs.
-        """
-        if not global_state.enabled:
-            return OriginalUNetModel.forward(self, x, timesteps, context, y, **kwargs)
-
-        assert (y is not None) == (
-                self.num_classes is not None
-        ), "must specify y if and only if the model is class-conditional"
-        hs = []
-        t_emb = openaimodel.timestep_embedding(timesteps, self.model_channels, repeat_only=False)
-        emb = self.time_embed(t_emb)
-
-        if self.num_classes is not None:
-            assert y.shape[0] == x.shape[0]
-            emb = emb + self.label_emb(y)
-
-        h = x.type(self.dtype)
-        for module in self.input_blocks:
-            h = module(h, emb, context)
-            hs.append(h)
-        h = self.middle_block(h, emb, context)
-        for module in self.output_blocks:
-            h = free_u_cat(h, hs.pop())
-            h = module(h, emb, context)
-        h = h.type(x.dtype)
-        if self.predict_codebook_ids:
-            return self.id_predictor(h)
-        else:
-            return self.out(h)
-
-
-if openaimodel_sdxl:
-    class SdxlUNetModel(openaimodel_sdxl.UNetModel):
-        """
-        copied from repositories.generative-models.sgm.modules.diffusionmodules.openaimodel
-        """
-
-        def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
-            """
-            Apply the model to an input batch.
-            :param x: an [N x C x ...] Tensor of inputs.
-            :param timesteps: a 1-D batch of timesteps.
-            :param context: conditioning plugged in via crossattn
-            :param y: an [N] Tensor of labels, if class-conditional.
-            :return: an [N x C x ...] Tensor of outputs.
-            """
-            if not global_state.enabled:
-                return OriginalSdxlUNetModel.forward(self, x, timesteps, context, y, **kwargs)
-
-            assert (y is not None) == (
-                self.num_classes is not None
-            ), "must specify y if and only if the model is class-conditional"
-            hs = []
-            t_emb = openaimodel_sdxl.timestep_embedding(timesteps, self.model_channels, repeat_only=False)
-            emb = self.time_embed(t_emb)
-
-            if self.num_classes is not None:
-                assert y.shape[0] == x.shape[0]
-                emb = emb + self.label_emb(y)
-
-            # h = x.type(self.dtype)
-            h = x
-            for module in self.input_blocks:
-                h = module(h, emb, context)
-                hs.append(h)
-            h = self.middle_block(h, emb, context)
-            for module in self.output_blocks:
-                h = free_u_cat(h, hs.pop())
-                h = module(h, emb, context)
-            h = h.type(x.dtype)
-            if self.predict_codebook_ids:
-                assert False, "not supported anymore. what the f*** are you doing?"
-            else:
-                return self.out(h)
-
-
-def free_u_cat(h, h_skip):
     dims = h.shape[1]
     try:
         index = [1280, 640].index(dims)
@@ -116,7 +33,7 @@ def free_u_cat(h, h_skip):
         h[:, mask] *= global_state.backbone_factors[index]
         h_skip = filter_skip(h_skip, threshold=global_state.skip_thresholds[index], scale=global_state.skip_factors[index], scale_high=global_state.high_skip_factors[index])
 
-    return torch.cat([h, h_skip], dim=1)
+    return original_function([h, h_skip], *args, **kwargs)
 
 
 def filter_skip(x, threshold, scale, scale_high):
@@ -162,12 +79,18 @@ def ratio_to_region(width: float, offset: float, n: int) -> Tuple[int, int, bool
     return round(start), round(end), inverted
 
 
-OriginalUNetModel = openaimodel.UNetModel
-if openaimodel_sdxl:
-    OriginalSdxlUNetModel = openaimodel_sdxl.UNetModel
+def patch():
+    cat_hijack = functools.partial(free_u_cat_hijack, original_function=th.cat)
+    th.cat = cat_hijack
 
-
-def patch_model():
-    openaimodel.UNetModel = UNetModel
-    if openaimodel_sdxl:
-        openaimodel_sdxl.UNetModel = SdxlUNetModel
+    cn_script_path = str(pathlib.Path(scripts.basedir()).parent / "sd-webui-controlnet")
+    sys.path.append(cn_script_path)
+    cn_status = "enabled"
+    try:
+        import scripts.hook as controlnet_hook
+        controlnet_hook.th.cat = cat_hijack
+    except ImportError:
+        cn_status = "disabled"
+    finally:
+        print("[sd-webui-freeu]", f"controlnet: *{cn_status}*")
+        sys.path.remove(cn_script_path)
