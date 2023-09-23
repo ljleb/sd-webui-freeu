@@ -19,27 +19,27 @@ class FreeUScript(scripts.Script):
             with gr.Accordion(open=True, label="Block 1"):
                 b0 = gr.Slider(
                     label="Backbone 1 Scale",
-                    minimum=0,
-                    maximum=2,
+                    minimum=-1,
+                    maximum=3,
                     value=1.2,
                 )
                 s0 = gr.Slider(
                     label="Skip 1 Scale",
-                    minimum=0,
-                    maximum=2,
+                    minimum=-1,
+                    maximum=3,
                     value=0.9,
                 )
             with gr.Accordion(open=True, label="Block 2"):
                 b1 = gr.Slider(
                     label="Backbone 2 Scale",
-                    minimum=0,
-                    maximum=2,
+                    minimum=-1,
+                    maximum=3,
                     value=1.4,
                 )
                 s1 = gr.Slider(
                     label="Skip 2 Scale",
-                    minimum=0,
-                    maximum=2,
+                    minimum=-1,
+                    maximum=3,
                     value=0.2,
                 )
 
