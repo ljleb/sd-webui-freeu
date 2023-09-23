@@ -1,5 +1,6 @@
 from lib_free_u import global_state
 from ldm.modules.diffusionmodules import openaimodel
+from math import floor
 try:
     from sgm.modules.diffusionmodules import openaimodel as openaimodel_sdxl
 except ImportError:
@@ -99,10 +100,12 @@ if openaimodel_sdxl:
 
 def free_u_cat(h, h_skip):
     if h.shape[1] == 1280:
-        h[:, :640] = h[:, :640] * global_state.backbone_factors[0]
+        offset = floor(640*global_state.backbone_offset[0])
+        h[:, offset:offset+640] = h[:, offset:offset+640] * global_state.backbone_factors[0]
         h_skip = filter_skip(h_skip, threshold=1, scale=global_state.skip_factors[0])
     if h.shape[1] == 640:
-        h[:, :320] = h[:, :320] * global_state.backbone_factors[1]
+        offset = floor(320*global_state.backbone_offset[1])
+        h[:, offset:offset+320] = h[:, offset:offset+320] * global_state.backbone_factors[1]
         h_skip = filter_skip(h_skip, threshold=1, scale=global_state.skip_factors[1])
 
     return torch.cat([h, h_skip], dim=1)
