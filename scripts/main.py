@@ -165,5 +165,5 @@ def group_block_infos(flat_components):
     ]
 
 
-unet.patch_model()
+unet.patch()
 xyz_grid.patch()
