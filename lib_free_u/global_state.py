@@ -1,4 +1,5 @@
 import dataclasses
+import inspect
 import re
 
 
@@ -20,6 +21,9 @@ class BlockInfo:
             "skip_threshold": self.skip_threshold,
             "skip_high_end_factor": self.skip_high_end_factor,
         }
+
+
+BLOCK_INFO_ARGS_LEN = len(inspect.getfullargspec(BlockInfo.__init__)[0]) - 1 # off by one because of self
 
 
 enabled: bool = False

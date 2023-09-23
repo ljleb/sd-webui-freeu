@@ -160,8 +160,8 @@ class FreeUScript(scripts.Script):
 
 def group_block_infos(flat_components):
     return [
-        global_state.BlockInfo(*flat_components[i:i+6])
-        for i in range(0, len(flat_components), 6)
+        global_state.BlockInfo(*flat_components[i:i + global_state.BLOCK_INFO_ARGS_LEN])
+        for i in range(0, len(flat_components), global_state.BLOCK_INFO_ARGS_LEN)
     ]
 
 
