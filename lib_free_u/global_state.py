@@ -6,8 +6,8 @@ import re
 class BlockInfo:
     backbone_factor: float = 1.0
     skip_factor: float = 1.0
-    backbone_width: float = 0.5
     backbone_offset: float = 0.0
+    backbone_width: float = 0.5
     skip_threshold: float = 0.03
     skip_high_end_factor: float = 1.0
 
@@ -15,8 +15,8 @@ class BlockInfo:
         return {
             "backbone_factor": self.backbone_factor,
             "skip_factor": self.skip_factor,
-            "backbone_width": self.backbone_width,
             "backbone_offset": self.backbone_offset,
+            "backbone_width": self.backbone_width,
             "skip_threshold": self.skip_threshold,
             "skip_high_end_factor": self.skip_high_end_factor,
         }
