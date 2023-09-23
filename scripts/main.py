@@ -11,11 +11,16 @@ class FreeUScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        with gr.Accordion(open=False, label=self.title()):
-            enabled = gr.Checkbox(
-                label="Enable",
-                value=False,
-            )
+        with gr.Accordion(open=False, label="FreeU"):
+            with gr.Row():
+                enabled = gr.Checkbox(
+                    label="Enable",
+                    value=False,
+                )
+                set_def = gr.Button(
+                        value="Reset to Defaults",
+                        size="sm",
+                    )
             with gr.Accordion(open=True, label="Block 1"):
                 b0 = gr.Slider(
                     label="Backbone 1 Scale",
@@ -42,6 +47,11 @@ class FreeUScript(scripts.Script):
                     maximum=3,
                     value=0.2,
                 )
+
+        def set_def_callback():
+            return 1.2,0.9,1.4,0.2
+
+        set_def.click(set_def_callback, outputs=[b0, s0, b1, s1])
 
         return enabled, b0, s0, b1, s1
 
