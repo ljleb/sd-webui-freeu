@@ -49,6 +49,7 @@ class FreeUScript(scripts.Script):
         global_state.enabled = enabled
         global_state.backbone_factors = [b1, b2]
         global_state.skip_factors = [s1, s2]
+        global_state.xyz_locked_attrs.clear()
 
 
 unet.patch_model()

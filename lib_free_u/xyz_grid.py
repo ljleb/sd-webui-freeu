@@ -1,7 +1,6 @@
-import functools
 from types import ModuleType
 from typing import Optional
-from modules import scripts, processing
+from modules import scripts
 from lib_free_u import global_state
 
 
@@ -14,12 +13,6 @@ def patch():
         xyz_module.AxisOption("[Free U] Block 2 Backbone Scale", float, apply_global_state("b2")),
         xyz_module.AxisOption("[Free U] Block 2 Skip Scale", float, apply_global_state("s2")),
     ])
-    processing.process_images_inner = functools.partial(processing_process_images_inner_hijack, original_function=processing.process_images_inner)
-
-
-def processing_process_images_inner_hijack(*args, original_function, **kwargs):
-    global_state.xyz_locked_attrs.clear()
-    return original_function(*args, **kwargs)
 
 
 def apply_global_state(attr):
