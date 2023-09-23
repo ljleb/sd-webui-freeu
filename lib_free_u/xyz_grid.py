@@ -10,7 +10,7 @@ def patch():
         xyz_module.AxisOption("[FreeU] Enabled", str_to_bool, apply_global_state("enabled"), choices=choices_bool),
         *[
             opt
-            for index in range(2)
+            for index in range(len(global_state.stage_infos))
             for opt in [
                 xyz_module.AxisOption(f"[FreeU] Stage {index+1} Backbone Scale", float, apply_global_state(f"b{index}")),
                 xyz_module.AxisOption(f"[FreeU] Stage {index+1} Backbone Offset", float, apply_global_state(f"o{index}")),

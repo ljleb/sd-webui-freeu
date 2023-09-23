@@ -22,24 +22,24 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
 
     dims = h.shape[1]
     try:
-        index = [1280, 640].index(dims)
-        block_info = global_state.block_infos[index]
+        index = [1280, 640, 320].index(dims)
+        stage_info = global_state.stage_infos[index]
     except ValueError:
-        block_info = None
+        stage_info = None
 
-    if block_info is not None:
-        redion_begin, region_end, region_inverted = ratio_to_region(block_info.backbone_width, block_info.backbone_offset, dims)
+    if stage_info is not None:
+        redion_begin, region_end, region_inverted = ratio_to_region(stage_info.backbone_width, stage_info.backbone_offset, dims)
         mask = torch.arange(dims)
         mask = (redion_begin <= mask) & (mask <= region_end)
         if region_inverted:
             mask = ~mask
 
-        h[:, mask] *= block_info.backbone_factor
+        h[:, mask] *= stage_info.backbone_factor
         h_skip = filter_skip(
             h_skip,
-            scale=block_info.skip_factor,
-            threshold=block_info.skip_threshold,
-            scale_high=block_info.skip_high_end_factor,
+            scale=stage_info.skip_factor,
+            threshold=stage_info.skip_threshold,
+            scale_high=stage_info.skip_high_end_factor,
         )
 
     return original_function([h, h_skip], *args, **kwargs)

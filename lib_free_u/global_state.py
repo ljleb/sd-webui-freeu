@@ -4,7 +4,7 @@ import re
 
 
 @dataclasses.dataclass
-class BlockInfo:
+class StageInfo:
     backbone_factor: float = 1.0
     skip_factor: float = 1.0
     backbone_offset: float = 0.0
@@ -13,24 +13,39 @@ class BlockInfo:
     skip_high_end_factor: float = 1.0
     # <- add new fields at the end here for png info backwards compatibility
 
-    def to_dict(self):
-        return {
-            "backbone_factor": self.backbone_factor,
-            "skip_factor": self.skip_factor,
-            "backbone_offset": self.backbone_offset,
-            "backbone_width": self.backbone_width,
-            "skip_threshold": self.skip_threshold,
-            "skip_high_end_factor": self.skip_high_end_factor,
-        }
+    def to_dict(self, include_default=False):
+        default_stage_info = StageInfo()
+
+        res = {}
+        if self.backbone_factor != default_stage_info.backbone_factor or include_default:
+            res["backbone_factor"] = self.backbone_factor
+
+        if self.skip_factor != default_stage_info.skip_factor or include_default:
+            res["skip_factor"] = self.skip_factor
+
+        if self.backbone_offset != default_stage_info.backbone_offset or include_default:
+            res["backbone_offset"] = self.backbone_offset
+
+        if self.backbone_width != default_stage_info.backbone_width or include_default:
+            res["backbone_width"] = self.backbone_width
+
+        if self.skip_threshold != default_stage_info.skip_threshold or include_default:
+            res["skip_threshold"] = self.skip_threshold
+
+        if self.skip_high_end_factor != default_stage_info.skip_high_end_factor or include_default:
+            res["skip_high_end_factor"] = self.skip_high_end_factor
+
+        return res
 
 
-BLOCK_INFO_ARGS_LEN = len(inspect.getfullargspec(BlockInfo.__init__)[0]) - 1  # off by one because of self
+STAGE_INFO_ARGS_LEN = len(inspect.getfullargspec(StageInfo.__init__)[0]) - 1  # off by one because of self
 
 
 enabled: bool = False
-block_infos = [
-    BlockInfo(),
-    BlockInfo(),
+stage_infos = [
+    StageInfo(),
+    StageInfo(),
+    StageInfo(),
 ]
 xyz_locked_attrs: set = set()
 
@@ -48,46 +63,46 @@ def update_attr(key, value):
 
     if match := shorthand_re.match(key):
         char, index = match.group(1, 2)
-        block_info = block_infos[int(index)]
+        stage_info = stage_infos[int(index)]
         if char == "b":
-            block_info.backbone_factor = value
+            stage_info.backbone_factor = value
             return
         elif char == "s":
-            block_info.skip_factor = value
+            stage_info.skip_factor = value
             return
         elif char == "o":
-            block_info.backbone_offset = value
+            stage_info.backbone_offset = value
             return
         elif char == "w":
-            block_info.backbone_width = value
+            stage_info.backbone_width = value
             return
         elif char == "t":
-            block_info.skip_threshold = value
+            stage_info.skip_threshold = value
             return
         elif char == "h":
-            block_info.high_skip_factor = value
+            stage_info.high_skip_factor = value
             return
 
-    if key == "block_infos":
-        for index, block_info in enumerate(value):
-            for key, value in block_info.to_dict().items():
+    if key == "stage_infos":
+        for index, stage_info in enumerate(value):
+            for key, value in stage_info.to_dict(include_default=True).items():
                 if key == "backbone_factor":
                     if f"b{index}" not in xyz_locked_attrs:
-                        block_infos[index].backbone_factor = value
+                        stage_infos[index].backbone_factor = value
                 elif key == "skip_factor":
                     if f"s{index}" not in xyz_locked_attrs:
-                        block_infos[index].skip_factor = value
+                        stage_infos[index].skip_factor = value
                 elif key == "backbone_offset":
                     if f"o{index}" not in xyz_locked_attrs:
-                        block_infos[index].backbone_offset = value
+                        stage_infos[index].backbone_offset = value
                 elif key == "backbone_width":
                     if f"w{index}" not in xyz_locked_attrs:
-                        block_infos[index].backbone_width = value
+                        stage_infos[index].backbone_width = value
                 elif key == "skip_threshold":
                     if f"t{index}" not in xyz_locked_attrs:
-                        block_infos[index].skip_threshold = value
+                        stage_infos[index].skip_threshold = value
                 elif key == "skip_high_end_factor":
                     if f"h{index}" not in xyz_locked_attrs:
-                        block_infos[index].skip_high_end_factor = value
+                        stage_infos[index].skip_high_end_factor = value
     else:
         globals()[key] = value
