@@ -86,8 +86,11 @@ def patch():
     cat_hijack = functools.partial(free_u_cat_hijack, original_function=th.cat)
     th.cat = cat_hijack
 
-    cn_script_path = str(pathlib.Path(scripts.basedir()).parent / "sd-webui-controlnet")
-    sys.path.append(cn_script_path)
+    cn_script_paths = [
+        str(pathlib.Path(scripts.basedir()).parent.parent / "extensions-builtin" / "sd-webui-controlnet"),
+        str(pathlib.Path(scripts.basedir()).parent / "sd-webui-controlnet"),
+    ]
+    sys.path[0:0] = cn_script_paths
     cn_status = "enabled"
     try:
         import scripts.hook as controlnet_hook
@@ -95,5 +98,7 @@ def patch():
     except ImportError:
         cn_status = "disabled"
     finally:
+        for p in cn_script_paths:
+            sys.path.remove(p)
+
         print("[sd-webui-freeu]", f"controlnet: *{cn_status}*")
-        sys.path.remove(cn_script_path)
