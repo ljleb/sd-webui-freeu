@@ -80,7 +80,7 @@ def update_attr(key, value):
             stage_info.skip_threshold = value
             return
         elif char == "h":
-            stage_info.high_skip_factor = value
+            stage_info.skip_high_end_factor = value
             return
 
     if key == "stage_infos":
