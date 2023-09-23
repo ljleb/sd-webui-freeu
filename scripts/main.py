@@ -132,5 +132,5 @@ class FreeUScript(scripts.Script):
         global_state.xyz_locked_attrs.clear()
 
 
-unet.patch_model()
+unet.patch()
 xyz_grid.patch()
