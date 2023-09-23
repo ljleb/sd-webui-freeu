@@ -27,10 +27,10 @@ class FreeUScript(scripts.Script):
 
             default_block_infos = [
                 global_state.BlockInfo(
-                    1.2, 0.9, 0, 0.5,
+                    1.2, 0.9, 0, 0.5, 0, 1,
                 ),
                 global_state.BlockInfo(
-                    1.4, 0.2, 0, 0.5,
+                    1.4, 0.2, 0, 0.5, 0, 1,
                 ),
             ]
 
