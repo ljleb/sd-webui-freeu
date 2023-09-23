@@ -1,11 +1,28 @@
+import dataclasses
 import re
 
 
+@dataclasses.dataclass
+class BlockInfo:
+    backbone_factor: float = 1.0
+    skip_factor: float = 1.0
+    backbone_width: float = 0.5
+    backbone_offset: float = 0.0
+
+    def to_dict(self):
+        return {
+            "backbone_factor": self.backbone_factor,
+            "skip_factor": self.skip_factor,
+            "backbone_width": self.backbone_width,
+            "backbone_offset": self.backbone_offset,
+        }
+
+
 enabled: bool = False
-backbone_factors: list = [1.0, 1.0]
-backbone_offsets: list = [1.0, 1.0]
-backbone_widths: list = [1.0, 1.0]
-skip_factors: list = [1.0, 1.0]
+block_infos = [
+    BlockInfo(),
+    BlockInfo(),
+]
 xyz_locked_attrs: set = set()
 
 shorthand_re = re.compile(r"^([a-z]{1,2})([0-9]+)$")
@@ -22,43 +39,34 @@ def update_attr(key, value):
 
     if match := shorthand_re.match(key):
         char, index = match.group(1, 2)
-        index = int(index)
+        skip_info = skip_infos[int(index)]
         if char == "b":
-            backbone_factors[index] = value
+            skip_info.backbone_factor = value
             return
         elif char == "s":
-            skip_factors[index] = value
+            skip_info.skip_factor = value
             return
         elif char == "o":
-            backbone_offsets[index] = value
+            skip_info.backbone_offset = value
             return
         elif char == "w":
-            backbone_widths[index] = value
+            skip_info.backbone_width = value
             return
 
-    if key == "backbone_factors":
-        for index, value in enumerate(value):
-            if f"b{index}" in xyz_locked_attrs:
-                continue
-
-            backbone_factors[index] = value
-    elif key == "skip_factors":
-        for index, value in enumerate(value):
-            if f"s{index}" in xyz_locked_attrs:
-                continue
-
-            skip_factors[index] = value
-    elif key == "backbone_offsets":
-        for index, value in enumerate(value):
-            if f"o{index}" in xyz_locked_attrs:
-                continue
-
-            backbone_offsets[index] = value
-    elif key == "backbone_widths":
-        for index, value in enumerate(value):
-            if f"w{index}" in xyz_locked_attrs:
-                continue
-
-            backbone_widths[index] = value
+    if key == "block_infos":
+        for index, block_info in enumerate(value):
+            for key, value in block_info.to_dict().items():
+                if key == "backbone_factor":
+                    if f"b{index}" not in xyz_locked_attrs:
+                        block_infos[index].backbone_factor = value
+                elif key == "skip_factor":
+                    if f"s{index}" not in xyz_locked_attrs:
+                        block_infos[index].skip_factor = value
+                elif key == "backbone_offset":
+                    if f"o{index}" not in xyz_locked_attrs:
+                        block_infos[index].backbone_offset = value
+                elif key == "backbone_width":
+                    if f"w{index}" not in xyz_locked_attrs:
+                        block_infos[index].backbone_width = value
     else:
         globals()[key] = value

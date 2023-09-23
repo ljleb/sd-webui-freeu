@@ -103,18 +103,19 @@ def free_u_cat(h, h_skip):
     dims = h.shape[1]
     try:
         index = [1280, 640].index(dims)
+        block_info = global_state.block_infos[index]
     except ValueError:
-        index = None
+        block_info = None
 
-    if index is not None:
-        redion_begin, region_end, region_inverted = ratio_to_region(global_state.backbone_widths[index], global_state.backbone_offsets[index], dims)
+    if block_info is not None:
+        redion_begin, region_end, region_inverted = ratio_to_region(block_info.backbone_width, block_info.backbone_offset, dims)
         mask = torch.arange(dims)
         mask = (redion_begin <= mask) & (mask <= region_end)
         if region_inverted:
             mask = ~mask
 
-        h[:, mask] *= global_state.backbone_factors[index]
-        h_skip = filter_skip(h_skip, threshold=1, scale=global_state.skip_factors[index])
+        h[:, mask] *= block_info.backbone_factor
+        h_skip = filter_skip(h_skip, threshold=1, scale=block_info.skip_factor)
 
     return torch.cat([h, h_skip], dim=1)
 

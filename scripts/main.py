@@ -24,65 +24,65 @@ class FreeUScript(scripts.Script):
                         size="sm",
                     )
 
-            with gr.Accordion(open=True, label="Block 1"):
-                b0 = gr.Slider(
-                    label="Backbone 1 Scale",
-                    minimum=-1,
-                    maximum=3,
-                    value=1.2,
-                )
-                s0 = gr.Slider(
-                    label="Skip 1 Scale",
-                    minimum=-1,
-                    maximum=3,
-                    value=0.9,
-                )
+            flat_components = []
 
-                with gr.Row():
-                    o0 = gr.Slider(
-                        label="Backbone 1 Offset",
-                        minimum=0,
-                        maximum=1,
-                        value=0,
-                    )
-                    w0 = gr.Slider(
-                        label="Backbone 1 Width",
-                        minimum=0,
-                        maximum=1,
-                        value=0.5,
-                    )
+            default_block_infos = [
+                global_state.BlockInfo(
+                    1.2, 0.9, 0, 0.5,
+                ),
+                global_state.BlockInfo(
+                    1.4, 0.2, 0, 0.5,
+                ),
+            ]
 
-            with gr.Accordion(open=True, label="Block 2"):
-                b1 = gr.Slider(
-                    label="Backbone 2 Scale",
-                    minimum=-1,
-                    maximum=3,
-                    value=1.4,
-                )
-                s1 = gr.Slider(
-                    label="Skip 2 Scale",
-                    minimum=-1,
-                    maximum=3,
-                    value=0.2,
-                )
+            for index in range(2):
+                block_n = index + 1
+                default_block_info = default_block_infos[index]
+                block_flat_components = []
 
-                with gr.Row():
-                    o1 = gr.Slider(
-                        label="Backbone 2 Offset",
-                        minimum=0,
-                        maximum=1,
-                        value=0,
-                    )
-                    w1 = gr.Slider(
-                        label="Backbone 2 Width",
-                        minimum=0,
-                        maximum=1,
-                        value=0.5,
-                    )
+                with gr.Accordion(open=True, label=f"Block {block_n}"):
+                    block_flat_components.append(gr.Slider(
+                        label=f"Backbone {block_n} Scale",
+                        minimum=-1,
+                        maximum=3,
+                        value=default_block_info.backbone_factor,
+                    ))
+                    default_block_info.backbone_factor = block_flat_components[-1].value
+
+                    block_flat_components.append(gr.Slider(
+                        label=f"Skip {block_n} Scale",
+                        minimum=-1,
+                        maximum=3,
+                        value=default_block_info.skip_factor,
+                    ))
+                    default_block_info.skip_factor = block_flat_components[-1].value
+
+                    with gr.Row():
+                        block_flat_components.append(gr.Slider(
+                            label=f"Backbone {block_n} Offset",
+                            minimum=0,
+                            maximum=1,
+                            value=default_block_info.backbone_offset,
+                        ))
+                        default_block_info.backbone_offset = block_flat_components[-1].value
+
+                        block_flat_components.append(gr.Slider(
+                            label=f"Backbone {block_n} Width",
+                            minimum=0,
+                            maximum=1,
+                            value=default_block_info.backbone_width,
+                        ))
+                        default_block_info.backbone_width = block_flat_components[-1].value
+
+                    flat_components.extend(block_flat_components)
 
         reset_to_defaults.click(
-            fn=lambda: (1.2, 0.9, 0, 0.5, 1.4, 0.2, 0, 0.5),
-            outputs=[b0, s0, o0, w0, b1, s1, o1, w1],
+            fn=lambda: [
+                v
+                for block_info in default_block_infos
+                for v in block_info.to_dict().values()
+            ],
+            outputs=flat_components,
         )
 
         infotext_component = gr.HTML(visible=False, interactive=False)
@@ -90,53 +90,63 @@ class FreeUScript(scripts.Script):
         infotext_component.change(
             fn=self.on_infotext_update,
             inputs=[infotext_component],
-            outputs=[infotext_component, b0, s0, o0, w0, b1, s1, o1, w1],
+            outputs=[infotext_component, *flat_components],
         )
 
         self.infotext_fields = [
             (infotext_component, "FreeU"),
         ]
-        self.paste_field_names = [p[1] for p in self.infotext_fields]
+        self.paste_field_names = ["FreeU"]
 
-        return enabled, b0, s0, o0, w0, b1, s1, o1, w1
+        return enabled, *flat_components
 
     def on_infotext_update(self, infotext):
         if not infotext:
             return (gr.skip(),) * 9
 
         params = json.loads(infotext)
+        block_infos = [
+            global_state.BlockInfo(*block_info.values())
+            for block_info in params["block_infos"]
+        ]
 
         return (
             gr.update(value=""),
             *(
                 gr.update(value=v)
-                for t in zip(params["backbone_factors"], params["skip_factors"], params["backbone_offsets"], params["backbone_widths"])
-                for v in t)
+                for block_info in block_infos
+                for v in block_info.to_dict().values()
+            )
         )
 
     def process(
         self,
         p: processing.StableDiffusionProcessing,
         enabled: bool,
-        b0: float, s0: float, o0: float, w0: float,
-        b1: float, s1: float, o1: float, w1: float
+        *args
     ):
+        block_infos = parse_process_args(args)
         global_state.update(
             enabled=enabled,
-            backbone_factors=[b0, b1],
-            skip_factors=[s0, s1],
-            backbone_offsets=[o0, o1],
-            backbone_widths=[w0, w1],
+            block_infos=block_infos,
         )
+        block_infos = global_state.block_infos
         global_state.xyz_locked_attrs.clear()
 
         if global_state.enabled:
             p.extra_generation_params["FreeU"] = json.dumps({
-                "backbone_factors": global_state.backbone_factors,
-                "skip_factors": global_state.skip_factors,
-                "backbone_offsets": global_state.backbone_offsets,
-                "backbone_widths": global_state.backbone_widths,
+                "block_infos": [
+                    block_info.to_dict()
+                    for block_info in block_infos
+                ],
             })
+
+
+def parse_process_args(flat_components):
+    return [
+        global_state.BlockInfo(*flat_components[i:i+4])
+        for i in range(0, len(flat_components), 4)
+    ]
 
 
 unet.patch_model()
