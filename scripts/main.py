@@ -123,9 +123,9 @@ class FreeUScript(scripts.Script):
         self,
         p: processing.StableDiffusionProcessing,
         enabled: bool,
-        *args
+        *flat_block_infos
     ):
-        block_infos = parse_process_args(args)
+        block_infos = group_block_infos(flat_block_infos)
         global_state.update(
             enabled=enabled,
             block_infos=block_infos,
@@ -142,7 +142,7 @@ class FreeUScript(scripts.Script):
             })
 
 
-def parse_process_args(flat_components):
+def group_block_infos(flat_components):
     return [
         global_state.BlockInfo(*flat_components[i:i+4])
         for i in range(0, len(flat_components), 4)
