@@ -87,10 +87,10 @@ def patch():
     th.cat = cat_hijack
 
     cn_script_paths = [
-        str(pathlib.Path(scripts.basedir()).parent / "sd-webui-controlnet"),
         str(pathlib.Path(scripts.basedir()).parent.parent / "extensions-builtin" / "sd-webui-controlnet"),
+        str(pathlib.Path(scripts.basedir()).parent / "sd-webui-controlnet"),
     ]
-    sys.path[1:1] = cn_script_paths
+    sys.path[0:0] = cn_script_paths
     cn_status = "enabled"
     try:
         import scripts.hook as controlnet_hook
