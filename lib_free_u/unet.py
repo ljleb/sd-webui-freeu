@@ -1,6 +1,5 @@
 import math
 from typing import Tuple
-
 from lib_free_u import global_state
 from ldm.modules.diffusionmodules import openaimodel
 try:
@@ -110,7 +109,7 @@ def free_u_cat(h, h_skip):
     if index is not None:
         redion_begin, region_end, region_inverted = ratio_to_region(global_state.backbone_widths[index], global_state.backbone_offsets[index], dims)
         mask = torch.arange(dims)
-        mask = (redion_begin <= mask) & (mask < region_end)
+        mask = (redion_begin <= mask) & (mask <= region_end)
         if region_inverted:
             mask = ~mask
 
