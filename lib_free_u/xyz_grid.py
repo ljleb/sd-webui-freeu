@@ -17,7 +17,7 @@ def patch():
 
 def apply_global_state(attr):
     def callback(_p, v, _vs):
-        setattr(global_state, attr, v)
+        global_state.update(**{attr: v})
         global_state.xyz_locked_attrs.add(attr)
 
     return callback

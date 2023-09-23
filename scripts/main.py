@@ -46,9 +46,11 @@ class FreeUScript(scripts.Script):
         return enabled, b0, s0, b1, s1
 
     def process(self, p, enabled: bool, b0: float, s0: float, b1: float, s1: float):
-        global_state.enabled = enabled
-        global_state.backbone_factors = [b0, b1]
-        global_state.skip_factors = [s0, s1]
+        global_state.update(
+            enabled=enabled,
+            backbone_factors=[b0, b1],
+            skip_factors=[s0, s1],
+        )
         global_state.xyz_locked_attrs.clear()
 
 
