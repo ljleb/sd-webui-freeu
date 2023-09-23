@@ -9,8 +9,9 @@ class BlockInfo:
     skip_factor: float = 1.0
     backbone_offset: float = 0.0
     backbone_width: float = 0.5
-    skip_threshold: float = 0.03
+    skip_threshold: float = 0.0
     skip_high_end_factor: float = 1.0
+    # <- add new fields at the end here for png info backwards compatibility
 
     def to_dict(self):
         return {
@@ -23,7 +24,7 @@ class BlockInfo:
         }
 
 
-BLOCK_INFO_ARGS_LEN = len(inspect.getfullargspec(BlockInfo.__init__)[0]) - 1 # off by one because of self
+BLOCK_INFO_ARGS_LEN = len(inspect.getfullargspec(BlockInfo.__init__)[0]) - 1  # off by one because of self
 
 
 enabled: bool = False

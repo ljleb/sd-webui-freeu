@@ -39,7 +39,7 @@ class FreeUScript(scripts.Script):
                 default_block_info = default_block_infos[index]
                 block_flat_components = []
 
-                with gr.Accordion(open=True, label=f"Block {block_n}"):
+                with gr.Accordion(open=True, label=f"Stage {block_n}"):
                     block_flat_components.append(gr.Slider(
                         label=f"Backbone {block_n} Scale",
                         minimum=-1,
@@ -106,7 +106,7 @@ class FreeUScript(scripts.Script):
         infotext_component.change(
             fn=self.on_infotext_update,
             inputs=[infotext_component],
-            outputs=[infotext_component, *flat_components],
+            outputs=[infotext_component, enabled, *flat_components],
         )
 
         self.infotext_fields = [
@@ -118,7 +118,7 @@ class FreeUScript(scripts.Script):
 
     def on_infotext_update(self, infotext):
         if not infotext:
-            return (gr.skip(),) * 9
+            return (gr.skip(),) * (2 + len(global_state.block_infos) * global_state.BLOCK_INFO_ARGS_LEN)
 
         params = json.loads(infotext)
         block_infos = [
@@ -128,6 +128,7 @@ class FreeUScript(scripts.Script):
 
         return (
             gr.update(value=""),
+            gr.update(value=True),
             *(
                 gr.update(value=v)
                 for block_info in block_infos
