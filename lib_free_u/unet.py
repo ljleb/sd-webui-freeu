@@ -121,17 +121,17 @@ def free_u_cat(h, h_skip):
 
 def filter_skip(x, threshold, scale, scale_high):
     # FFT
-    x_freq = torch.fft.fftn(x.to(dtype=torch.float32), dim=(-2, -1))
+    x_freq = torch.fft.fftn(x.float(), dim=(-2, -1))
     x_freq = torch.fft.fftshift(x_freq, dim=(-2, -1))
 
     B, C, H, W = x_freq.shape
-    mask = torch.full((B, C, H, W), scale_high).cuda()
+    mask = torch.full((B, C, H, W), scale_high).to(x.device)
 
     crow, ccol = H // 2, W // 2
     threshold_row = max(1, math.floor(crow * threshold))
     threshold_col = max(1, math.floor(ccol * threshold))
     mask[..., crow - threshold_row:crow + threshold_row, ccol - threshold_col:ccol + threshold_col] = scale
-    x_freq = x_freq * mask
+    x_freq *= mask
 
     # IFFT
     x_freq = torch.fft.ifftshift(x_freq, dim=(-2, -1))
