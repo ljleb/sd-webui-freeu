@@ -114,7 +114,7 @@ def free_u_cat(h, h_skip):
             mask = ~mask
 
         h[:, mask] *= global_state.backbone_factors[index]
-        h_skip = filter_skip(h_skip, threshold=global_state.skip_threshold[index], scale=global_state.skip_factors[index], scale_high=global_state.high_skip_factors[index])
+        h_skip = filter_skip(h_skip, threshold=global_state.skip_thresholds[index], scale=global_state.skip_factors[index], scale_high=global_state.high_skip_factors[index])
 
     return torch.cat([h, h_skip], dim=1)
 

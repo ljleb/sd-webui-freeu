@@ -49,16 +49,16 @@ class FreeUScript(scripts.Script):
                         maximum=1,
                         value=0.5,
                     )
-                    
+
                 with gr.Row():
                     t0 = gr.Slider(
-                        label="Skip 1 Threshold",
+                        label="Skip 1 Cutoff",
                         minimum=0.0,
                         maximum=1.0,
                         value=0.03,
                     )
                     h0 = gr.Slider(
-                        label="Skip 1 Scale High",
+                        label="Skip 1 High End Scale",
                         minimum=-1,
                         maximum=3,
                         value=1,
@@ -91,16 +91,16 @@ class FreeUScript(scripts.Script):
                         maximum=1,
                         value=0.5,
                     )
-                    
+
                 with gr.Row():
                     t1 = gr.Slider(
-                        label="Skip 2 Threshold",
+                        label="Skip 2 Cutoff",
                         minimum=0.0,
                         maximum=1.0,
                         value=0.03,
                     )
                     h1 = gr.Slider(
-                        label="Skip 2 Scale High",
+                        label="Skip 2 High End Scale",
                         minimum=-1,
                         maximum=3,
                         value=1,
@@ -126,7 +126,7 @@ class FreeUScript(scripts.Script):
             backbone_offsets=[o0, o1],
             backbone_widths=[w0, w1],
             skip_factors=[s0, s1],
-            skip_threshold=[t0, t1],
+            skip_thresholds=[t0, t1],
             high_skip_factors=[h0, h1],
         )
         global_state.xyz_locked_attrs.clear()

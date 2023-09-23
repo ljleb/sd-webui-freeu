@@ -12,15 +12,15 @@ def patch():
         xyz_module.AxisOption("[FreeU] Block 1 Backbone Offset", float, apply_global_state("o0")),
         xyz_module.AxisOption("[FreeU] Block 1 Backbone Width", float, apply_global_state("w0")),
         xyz_module.AxisOption("[FreeU] Block 1 Skip Scale", float, apply_global_state("s0")),
-        xyz_module.AxisOption("[FreeU] Block 1 Skip Threshold", float, apply_global_state("t0")),
-        xyz_module.AxisOption("[FreeU] Block 1 Skip Scale High", float, apply_global_state("h0")),
-        
+        xyz_module.AxisOption("[FreeU] Block 1 Skip Cutoff", float, apply_global_state("t0")),
+        xyz_module.AxisOption("[FreeU] Block 1 Skip High End Scale", float, apply_global_state("h0")),
+
         xyz_module.AxisOption("[FreeU] Block 2 Backbone Scale", float, apply_global_state("b1")),
         xyz_module.AxisOption("[FreeU] Block 2 Backbone Offset", float, apply_global_state("o1")),
         xyz_module.AxisOption("[FreeU] Block 2 Backbone Width", float, apply_global_state("w1")),
         xyz_module.AxisOption("[FreeU] Block 2 Skip Scale", float, apply_global_state("s1")),
-        xyz_module.AxisOption("[FreeU] Block 2 Skip Threshold", float, apply_global_state("t1")),
-        xyz_module.AxisOption("[FreeU] Block 2 Skip Scale High", float, apply_global_state("h1")),
+        xyz_module.AxisOption("[FreeU] Block 2 Skip Cutoff", float, apply_global_state("t1")),
+        xyz_module.AxisOption("[FreeU] Block 2 Skip High End Scale", float, apply_global_state("h1")),
     ])
 
 
