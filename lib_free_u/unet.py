@@ -125,7 +125,7 @@ def filter_skip(x, threshold, scale, scale_high):
     x_freq = torch.fft.fftshift(x_freq, dim=(-2, -1))
 
     B, C, H, W = x_freq.shape
-    mask = torch.full((B, C, H, W), scale_high).to(x.device)
+    mask = torch.full((B, C, H, W), scale_high, device=x.device)
 
     crow, ccol = H // 2, W // 2
     threshold_row = max(1, math.floor(crow * threshold))
