@@ -48,10 +48,10 @@ class FreeUScript(scripts.Script):
                     value=0.2,
                 )
 
-        def set_def_callback():
-            return 1.2,0.9,1.4,0.2
+        def reset_to_defaults():
+            return 1.2, 0.9, 1.4, 0.2
 
-        set_def.click(set_def_callback, outputs=[b0, s0, b1, s1])
+        set_def.click(reset_to_defaults, outputs=[b0, s0, b1, s1])
 
         return enabled, b0, s0, b1, s1
 
