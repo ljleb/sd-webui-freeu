@@ -128,8 +128,8 @@ def filter_skip(x, threshold, scale, scale_high):
     mask = torch.full((B, C, H, W), scale_high).cuda()
 
     crow, ccol = H // 2, W // 2
-    threshold_row = round(crow * threshold)
-    threshold_col = round(ccol * threshold)
+    threshold_row = math.ceil(crow * threshold)
+    threshold_col = math.ceil(ccol * threshold)
     mask[..., crow - threshold_row:crow + threshold_row, ccol - threshold_col:ccol + threshold_col] = scale
     x_freq = x_freq * mask
 
