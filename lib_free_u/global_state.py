@@ -15,8 +15,8 @@ class StageInfo:
 
     def to_dict(self, include_default=False):
         default_stage_info = StageInfo()
-
         res = {}
+
         if self.backbone_factor != default_stage_info.backbone_factor or include_default:
             res["backbone_factor"] = self.backbone_factor
 
