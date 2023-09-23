@@ -1,6 +1,11 @@
 from lib_free_u import global_state
 from ldm.modules.diffusionmodules import openaimodel
-from sgm.modules.diffusionmodules import openaimodel as openaimodel_sdxl
+try:
+    from sgm.modules.diffusionmodules import openaimodel as openaimodel_sdxl
+except ImportError:
+    openaimodel_sdxl = None
+
+
 from modules.sd_hijack_unet import th as torch
 
 
@@ -47,48 +52,49 @@ class UNetModel(openaimodel.UNetModel):
             return self.out(h)
 
 
-class SdxlUNetModel(openaimodel_sdxl.UNetModel):
-    """
-    copied from repositories.generative-models.sgm.modules.diffusionmodules.openaimodel
-    """
-
-    def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
+if openaimodel_sdxl:
+    class SdxlUNetModel(openaimodel_sdxl.UNetModel):
         """
-        Apply the model to an input batch.
-        :param x: an [N x C x ...] Tensor of inputs.
-        :param timesteps: a 1-D batch of timesteps.
-        :param context: conditioning plugged in via crossattn
-        :param y: an [N] Tensor of labels, if class-conditional.
-        :return: an [N x C x ...] Tensor of outputs.
+        copied from repositories.generative-models.sgm.modules.diffusionmodules.openaimodel
         """
-        if not global_state.enabled:
-            return OriginalSdxlUNetModel.forward(self, x, timesteps, context, y, **kwargs)
 
-        assert (y is not None) == (
-            self.num_classes is not None
-        ), "must specify y if and only if the model is class-conditional"
-        hs = []
-        t_emb = openaimodel_sdxl.timestep_embedding(timesteps, self.model_channels, repeat_only=False)
-        emb = self.time_embed(t_emb)
+        def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
+            """
+            Apply the model to an input batch.
+            :param x: an [N x C x ...] Tensor of inputs.
+            :param timesteps: a 1-D batch of timesteps.
+            :param context: conditioning plugged in via crossattn
+            :param y: an [N] Tensor of labels, if class-conditional.
+            :return: an [N x C x ...] Tensor of outputs.
+            """
+            if not global_state.enabled:
+                return OriginalSdxlUNetModel.forward(self, x, timesteps, context, y, **kwargs)
 
-        if self.num_classes is not None:
-            assert y.shape[0] == x.shape[0]
-            emb = emb + self.label_emb(y)
+            assert (y is not None) == (
+                self.num_classes is not None
+            ), "must specify y if and only if the model is class-conditional"
+            hs = []
+            t_emb = openaimodel_sdxl.timestep_embedding(timesteps, self.model_channels, repeat_only=False)
+            emb = self.time_embed(t_emb)
 
-        # h = x.type(self.dtype)
-        h = x
-        for module in self.input_blocks:
-            h = module(h, emb, context)
-            hs.append(h)
-        h = self.middle_block(h, emb, context)
-        for module in self.output_blocks:
-            h = free_u_cat(h, hs.pop())
-            h = module(h, emb, context)
-        h = h.type(x.dtype)
-        if self.predict_codebook_ids:
-            assert False, "not supported anymore. what the f*** are you doing?"
-        else:
-            return self.out(h)
+            if self.num_classes is not None:
+                assert y.shape[0] == x.shape[0]
+                emb = emb + self.label_emb(y)
+
+            # h = x.type(self.dtype)
+            h = x
+            for module in self.input_blocks:
+                h = module(h, emb, context)
+                hs.append(h)
+            h = self.middle_block(h, emb, context)
+            for module in self.output_blocks:
+                h = free_u_cat(h, hs.pop())
+                h = module(h, emb, context)
+            h = h.type(x.dtype)
+            if self.predict_codebook_ids:
+                assert False, "not supported anymore. what the f*** are you doing?"
+            else:
+                return self.out(h)
 
 
 def free_u_cat(h, h_skip):
@@ -125,9 +131,11 @@ def filter_skip(x, threshold, scale):
 
 
 OriginalUNetModel = openaimodel.UNetModel
-OriginalSdxlUNetModel = openaimodel_sdxl.UNetModel
+if openaimodel_sdxl:
+    OriginalSdxlUNetModel = openaimodel_sdxl.UNetModel
 
 
 def patch_model():
     openaimodel.UNetModel = UNetModel
-    openaimodel_sdxl.UNetModel = SdxlUNetModel
+    if openaimodel_sdxl:
+        openaimodel_sdxl.UNetModel = SdxlUNetModel
