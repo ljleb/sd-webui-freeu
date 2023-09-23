@@ -55,7 +55,7 @@ class FreeUScript(scripts.Script):
                         label="Skip 1 Cutoff",
                         minimum=0.0,
                         maximum=1.0,
-                        value=0.03,
+                        value=0,
                     )
                     h0 = gr.Slider(
                         label="Skip 1 High End Scale",
@@ -97,7 +97,7 @@ class FreeUScript(scripts.Script):
                         label="Skip 2 Cutoff",
                         minimum=0.0,
                         maximum=1.0,
-                        value=0.03,
+                        value=0,
                     )
                     h1 = gr.Slider(
                         label="Skip 2 High End Scale",
@@ -107,7 +107,7 @@ class FreeUScript(scripts.Script):
                     )
 
         reset_to_defaults.click(
-            fn=lambda: (1.2, 0.9, 0, 0.5, 0.03, 1.0, 1.4, 0.2, 0, 0.5, 0.03, 1.0),
+            fn=lambda: (1.2, 0.9, 0, 0.5, 0, 1, 1.4, 0.2, 0, 0.5, 0, 1),
             outputs=[b0, s0, o0, w0, t0, h0, b1, s1, o1, w1, t1, h1],
         )
 

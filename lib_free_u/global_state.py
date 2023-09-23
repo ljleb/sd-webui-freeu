@@ -6,7 +6,7 @@ backbone_factors: list = [1.0, 1.0]
 backbone_offsets: list = [1.0, 1.0]
 backbone_widths: list = [1.0, 1.0]
 skip_factors: list = [1.0, 1.0]
-skip_thresholds: list = [0.03, 0.03]
+skip_thresholds: list = [0., 0.0]
 high_skip_factors: list = [1.0, 1.0]
 xyz_locked_attrs: set = set()
 
