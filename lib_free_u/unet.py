@@ -117,7 +117,7 @@ def filter_skip(x, threshold, scale):
 
     # IFFT
     x_freq = torch.fft.ifftshift(x_freq, dim=(-2, -1))
-    x_filtered = torch.fft.ifftn(x_freq, s=(x.shape[-2], x.shape[-1])).real
+    x_filtered = torch.fft.ifftn(x_freq, dim=(-2, -1)).real
 
     x_filtered = x_filtered.to(dtype=torch.float16)
 

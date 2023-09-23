@@ -1,6 +1,6 @@
 from modules import scripts
 import gradio as gr
-from lib_free_u import global_state, unet
+from lib_free_u import global_state, unet, xyz_grid
 
 
 class FreeUScript(scripts.Script):
@@ -47,8 +47,9 @@ class FreeUScript(scripts.Script):
 
     def process(self, p, enabled: bool, b1: float, s1: float, b2: float, s2: float):
         global_state.enabled = enabled
-        global_state.backbone_factors[:] = b1, b2
-        global_state.skip_factors[:] = s1, s2
+        global_state.backbone_factors = [b1, b2]
+        global_state.skip_factors = [s1, s2]
 
 
 unet.patch_model()
+xyz_grid.patch()
