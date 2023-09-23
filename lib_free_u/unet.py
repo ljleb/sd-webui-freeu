@@ -10,10 +10,13 @@ import torch
 
 
 def free_u_cat_hijack(hs, *args, original_function, **kwargs):
+    if not global_state.enabled:
+        return original_function(hs, *args, **kwargs)
+
     try:
         h, h_skip = hs
         if list(kwargs.keys()) != ["dim"] or kwargs.get("dim", -1) != 1:
-            raise ValueError
+            return original_function(hs, *args, **kwargs)
     except ValueError:
         return original_function(hs, *args, **kwargs)
 
@@ -42,7 +45,7 @@ def filter_skip(x, threshold, scale, scale_high):
     x_freq = torch.fft.fftshift(x_freq, dim=(-2, -1))
 
     B, C, H, W = x_freq.shape
-    mask = torch.full((B, C, H, W), scale_high, device=x.device)
+    mask = torch.full((B, C, H, W), scale_high, device=x.device, dtype=x.dtype)
 
     crow, ccol = H // 2, W // 2
     threshold_row = max(1, math.floor(crow * threshold))
