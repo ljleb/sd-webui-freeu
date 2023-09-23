@@ -10,9 +10,11 @@ def patch():
         xyz_module.AxisOption("[FreeU] Enabled", str_to_bool, apply_global_state("enabled"), choices=choices_bool),
         xyz_module.AxisOption("[FreeU] Block 1 Backbone Scale", float, apply_global_state("b0")),
         xyz_module.AxisOption("[FreeU] Block 1 Backbone Offset", float, apply_global_state("o0")),
+        xyz_module.AxisOption("[FreeU] Block 1 Backbone Width", float, apply_global_state("w0")),
         xyz_module.AxisOption("[FreeU] Block 1 Skip Scale", float, apply_global_state("s0")),
         xyz_module.AxisOption("[FreeU] Block 2 Backbone Scale", float, apply_global_state("b1")),
         xyz_module.AxisOption("[FreeU] Block 2 Backbone Offset", float, apply_global_state("o1")),
+        xyz_module.AxisOption("[FreeU] Block 2 Backbone Width", float, apply_global_state("w1")),
         xyz_module.AxisOption("[FreeU] Block 2 Skip Scale", float, apply_global_state("s1")),
     ])
 

@@ -3,7 +3,8 @@ import re
 
 enabled: bool = False
 backbone_factors: list = [1.0, 1.0]
-backbone_offset: list = [1.0, 1.0]
+backbone_offsets: list = [1.0, 1.0]
+backbone_widths: list = [1.0, 1.0]
 skip_factors: list = [1.0, 1.0]
 xyz_locked_attrs: set = set()
 
@@ -29,7 +30,10 @@ def update_attr(key, value):
             skip_factors[index] = value
             return
         elif char == "o":
-            backbone_offset[index] = value
+            backbone_offsets[index] = value
+            return
+        elif char == "w":
+            backbone_widths[index] = value
             return
 
     if key == "backbone_factors":
@@ -44,11 +48,17 @@ def update_attr(key, value):
                 continue
 
             skip_factors[index] = value
-    elif key == "backbone_offset":
+    elif key == "backbone_offsets":
         for index, value in enumerate(value):
             if f"o{index}" in xyz_locked_attrs:
                 continue
 
-            backbone_offset[index] = value
+            backbone_offsets[index] = value
+    elif key == "backbone_widths":
+        for index, value in enumerate(value):
+            if f"w{index}" in xyz_locked_attrs:
+                continue
+
+            backbone_widths[index] = value
     else:
         globals()[key] = value
