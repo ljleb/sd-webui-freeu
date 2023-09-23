@@ -1,3 +1,5 @@
+import json
+
 from modules import scripts, processing
 import gradio as gr
 from lib_free_u import global_state, unet, xyz_grid
@@ -83,37 +85,16 @@ class FreeUScript(scripts.Script):
             outputs=[b0, s0, o0, w0, b1, s1, o1, w1],
         )
 
-        backbone_factors_infotext = gr.HTML(visible=False, interactive=False)
-        backbone_offsets_infotext = gr.HTML(visible=False, interactive=False)
-        backbone_widths_infotext = gr.HTML(visible=False, interactive=False)
-        skip_factors_infotext = gr.HTML(visible=False, interactive=False)
+        infotext_component = gr.HTML(visible=False, interactive=False)
 
-        backbone_factors_infotext.change(
+        infotext_component.change(
             fn=self.on_update_scales,
-            inputs=[backbone_factors_infotext],
-            outputs=[backbone_factors_infotext, b0, b1],
-        )
-        backbone_offsets_infotext.change(
-            fn=self.on_update_scales,
-            inputs=[backbone_offsets_infotext],
-            outputs=[backbone_offsets_infotext, o0, o1],
-        )
-        backbone_widths_infotext.change(
-            fn=self.on_update_scales,
-            inputs=[backbone_widths_infotext],
-            outputs=[backbone_widths_infotext, w0, w1],
-        )
-        skip_factors_infotext.change(
-            fn=self.on_update_scales,
-            inputs=[skip_factors_infotext],
-            outputs=[skip_factors_infotext, s0, s1],
+            inputs=[infotext_component],
+            outputs=[infotext_component, b0, s0, o0, w0, b1, s1, o1, w1],
         )
 
         self.infotext_fields = [
-            (backbone_factors_infotext, "FreeU Backbone Factors"),
-            (backbone_widths_infotext, "FreeU Backbone Widths"),
-            (backbone_offsets_infotext, "FreeU Backbone Offsets"),
-            (skip_factors_infotext, "FreeU Skip Factors"),
+            (infotext_component, "FreeU"),
         ]
         self.paste_field_names = [p[1] for p in self.infotext_fields]
 
@@ -121,11 +102,16 @@ class FreeUScript(scripts.Script):
 
     def on_update_scales(self, infotext):
         if not infotext:
-            return (gr.skip(),) * 3
+            return (gr.skip(),) * 9
+
+        params = json.loads(infotext)
 
         return (
             gr.update(value=""),
-            *(gr.update(value=float(b)) for b in infotext.split(",")),
+            *(
+                gr.update(value=v)
+                for t in zip(params["backbone_factors"], params["skip_factors"], params["backbone_offsets"], params["backbone_widths"])
+                for v in t)
         )
 
     def process(
@@ -138,17 +124,19 @@ class FreeUScript(scripts.Script):
         global_state.update(
             enabled=enabled,
             backbone_factors=[b0, b1],
+            skip_factors=[s0, s1],
             backbone_offsets=[o0, o1],
             backbone_widths=[w0, w1],
-            skip_factors=[s0, s1],
         )
         global_state.xyz_locked_attrs.clear()
 
         if global_state.enabled:
-            p.extra_generation_params["FreeU Backbone Factors"] = ",".join(str(b) for b in global_state.backbone_factors)
-            p.extra_generation_params["FreeU Backbone Widths"] = ",".join(str(b) for b in global_state.backbone_widths)
-            p.extra_generation_params["FreeU Backbone Offsets"] = ",".join(str(b) for b in global_state.backbone_offsets)
-            p.extra_generation_params["FreeU Skip Factors"] = ",".join(str(b) for b in global_state.skip_factors)
+            p.extra_generation_params["FreeU"] = json.dumps({
+                "backbone_factors": global_state.backbone_factors,
+                "skip_factors": global_state.skip_factors,
+                "backbone_offsets": global_state.backbone_offsets,
+                "backbone_widths": global_state.backbone_widths,
+            })
 
 
 unet.patch_model()
