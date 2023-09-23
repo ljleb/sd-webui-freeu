@@ -6,6 +6,8 @@ backbone_factors: list = [1.0, 1.0]
 backbone_offsets: list = [1.0, 1.0]
 backbone_widths: list = [1.0, 1.0]
 skip_factors: list = [1.0, 1.0]
+skip_threshold: list = [0.03, 0.03]
+high_skip_factors: list = [1.0, 1.0]
 xyz_locked_attrs: set = set()
 
 shorthand_re = re.compile(r"^([a-z]{1,2})([0-9]+)$")
@@ -35,6 +37,12 @@ def update_attr(key, value):
         elif char == "w":
             backbone_widths[index] = value
             return
+        elif char == "t":
+            skip_threshold[index] = value
+            return
+        elif char == "h":
+            high_skip_factors[index] = value
+            return
 
     if key == "backbone_factors":
         for index, value in enumerate(value):
@@ -60,5 +68,17 @@ def update_attr(key, value):
                 continue
 
             backbone_widths[index] = value
+    elif key == "skip_threshold":
+        for index, value in enumerate(value):
+            if f"t{index}" in xyz_locked_attrs:
+                continue
+
+            skip_threshold[index] = value
+    elif key == "high_skip_factors":
+        for index, value in enumerate(value):
+            if f"h{index}" in xyz_locked_attrs:
+                continue
+
+            high_skip_factors[index] = value
     else:
         globals()[key] = value
