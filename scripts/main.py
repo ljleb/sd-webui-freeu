@@ -1,5 +1,4 @@
 import json
-
 from modules import scripts, processing
 import gradio as gr
 from lib_free_u import global_state, unet, xyz_grid
@@ -74,6 +73,23 @@ class FreeUScript(scripts.Script):
                         ))
                         default_block_info.backbone_width = block_flat_components[-1].value
 
+                    with gr.Row():
+                        block_flat_components.append(gr.Slider(
+                            label="Skip 2 Cutoff",
+                            minimum=0.0,
+                            maximum=1.0,
+                            value=default_block_info.skip_threshold,
+                        ))
+                        default_block_info.skip_threshold = block_flat_components[-1].value
+
+                        block_flat_components.append(gr.Slider(
+                            label="Skip 2 High End Scale",
+                            minimum=-1,
+                            maximum=3,
+                            value=default_block_info.skip_high_end_factor,
+                        ))
+                        default_block_info.skip_high_end_factor = block_flat_components[-1].value
+
                     flat_components.extend(block_flat_components)
 
         reset_to_defaults.click(
@@ -144,8 +160,8 @@ class FreeUScript(scripts.Script):
 
 def group_block_infos(flat_components):
     return [
-        global_state.BlockInfo(*flat_components[i:i+4])
-        for i in range(0, len(flat_components), 4)
+        global_state.BlockInfo(*flat_components[i:i+6])
+        for i in range(0, len(flat_components), 6)
     ]
 
 

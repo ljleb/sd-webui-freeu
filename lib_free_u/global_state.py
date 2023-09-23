@@ -8,6 +8,8 @@ class BlockInfo:
     skip_factor: float = 1.0
     backbone_width: float = 0.5
     backbone_offset: float = 0.0
+    skip_threshold: float = 0.03
+    skip_high_end_factor: float = 1.0
 
     def to_dict(self):
         return {
@@ -15,6 +17,8 @@ class BlockInfo:
             "skip_factor": self.skip_factor,
             "backbone_width": self.backbone_width,
             "backbone_offset": self.backbone_offset,
+            "skip_threshold": self.skip_threshold,
+            "skip_high_end_factor": self.skip_high_end_factor,
         }
 
 
@@ -39,18 +43,24 @@ def update_attr(key, value):
 
     if match := shorthand_re.match(key):
         char, index = match.group(1, 2)
-        skip_info = skip_infos[int(index)]
+        block_info = block_infos[int(index)]
         if char == "b":
-            skip_info.backbone_factor = value
+            block_info.backbone_factor = value
             return
         elif char == "s":
-            skip_info.skip_factor = value
+            block_info.skip_factor = value
             return
         elif char == "o":
-            skip_info.backbone_offset = value
+            block_info.backbone_offset = value
             return
         elif char == "w":
-            skip_info.backbone_width = value
+            block_info.backbone_width = value
+            return
+        elif char == "t":
+            block_info.skip_threshold = value
+            return
+        elif char == "h":
+            block_info.high_skip_factor = value
             return
 
     if key == "block_infos":
@@ -68,5 +78,11 @@ def update_attr(key, value):
                 elif key == "backbone_width":
                     if f"w{index}" not in xyz_locked_attrs:
                         block_infos[index].backbone_width = value
+                elif key == "skip_threshold":
+                    if f"t{index}" not in xyz_locked_attrs:
+                        block_infos[index].skip_threshold = value
+                elif key == "skip_high_end_factor":
+                    if f"h{index}" not in xyz_locked_attrs:
+                        block_infos[index].skip_high_end_factor = value
     else:
         globals()[key] = value

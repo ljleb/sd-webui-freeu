@@ -16,6 +16,8 @@ def patch():
                 xyz_module.AxisOption(f"[FreeU] Block {index+1} Backbone Offset", float, apply_global_state(f"o{index}")),
                 xyz_module.AxisOption(f"[FreeU] Block {index+1} Backbone Width", float, apply_global_state(f"w{index}")),
                 xyz_module.AxisOption(f"[FreeU] Block {index+1} Skip Scale", float, apply_global_state(f"s{index}")),
+                xyz_module.AxisOption(f"[FreeU] Block {index+1} Skip Cutoff", float, apply_global_state(f"t{index}")),
+                xyz_module.AxisOption(f"[FreeU] Block {index+1} Skip High End Scale", float, apply_global_state(f"h{index}")),
             ]
         ]
     ])

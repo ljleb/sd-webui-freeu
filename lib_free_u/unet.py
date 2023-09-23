@@ -115,21 +115,28 @@ def free_u_cat(h, h_skip):
             mask = ~mask
 
         h[:, mask] *= block_info.backbone_factor
-        h_skip = filter_skip(h_skip, threshold=1, scale=block_info.skip_factor)
+        h_skip = filter_skip(
+            h_skip,
+            scale=block_info.skip_factor,
+            threshold=block_info.skip_threshold,
+            scale_high=block_info.skip_high_end_factor,
+        )
 
     return torch.cat([h, h_skip], dim=1)
 
 
-def filter_skip(x, threshold, scale):
+def filter_skip(x, threshold, scale, scale_high):
     # FFT
     x_freq = torch.fft.fftn(x.to(dtype=torch.float32), dim=(-2, -1))
     x_freq = torch.fft.fftshift(x_freq, dim=(-2, -1))
 
     B, C, H, W = x_freq.shape
-    mask = torch.ones((B, C, H, W)).cuda()
+    mask = torch.full((B, C, H, W), scale_high).cuda()
 
     crow, ccol = H // 2, W // 2
-    mask[..., crow - threshold:crow + threshold, ccol - threshold:ccol + threshold] = scale
+    threshold_row = round(crow * threshold)
+    threshold_col = round(ccol * threshold)
+    mask[..., crow - threshold_row:crow + threshold_row, ccol - threshold_col:ccol + threshold_col] = scale
     x_freq = x_freq * mask
 
     # IFFT
