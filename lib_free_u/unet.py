@@ -46,12 +46,19 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
 
 
 def filter_skip(x, threshold, scale, scale_high):
+    if scale == 1 and scale_high == 1:
+        return x
+
+    fft_device = x.device
+    if torch.backends.mps.is_available():
+        fft_device = "cpu"
+
     # FFT
-    x_freq = torch.fft.fftn(x.float(), dim=(-2, -1))
+    x_freq = torch.fft.fftn(x.to(fft_device).float(), dim=(-2, -1))
     x_freq = torch.fft.fftshift(x_freq, dim=(-2, -1))
 
     B, C, H, W = x_freq.shape
-    mask = torch.full((B, C, H, W), scale_high, device=x.device, dtype=x.dtype)
+    mask = torch.full((B, C, H, W), float(scale_high), device=fft_device).float()
 
     crow, ccol = H // 2, W // 2
     threshold_row = max(1, math.floor(crow * threshold))
@@ -61,7 +68,7 @@ def filter_skip(x, threshold, scale, scale_high):
 
     # IFFT
     x_freq = torch.fft.ifftshift(x_freq, dim=(-2, -1))
-    x_filtered = torch.fft.ifftn(x_freq, dim=(-2, -1)).real.to(dtype=x.dtype)
+    x_filtered = torch.fft.ifftn(x_freq, dim=(-2, -1)).real.to(device=x.device, dtype=x.dtype)
 
     return x_filtered
 
