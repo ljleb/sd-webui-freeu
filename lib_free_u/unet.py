@@ -50,7 +50,7 @@ def filter_skip(x, threshold, scale, scale_high):
         return x
 
     fft_device = x.device
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    if no_gpu_complex_support():
         fft_device = "cpu"
 
     # FFT
@@ -93,6 +93,18 @@ def ratio_to_region(width: float, offset: float, n: int) -> Tuple[int, int, bool
         end = offset * n
 
     return round(start), round(end), inverted
+
+
+def no_gpu_complex_support():
+    mps_available = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    try:
+        import torch_directml
+    except ImportError:
+        dml_available = False
+    else:
+        dml_available = torch_directml.is_available()
+
+    return mps_available or dml_available
 
 
 def patch():
