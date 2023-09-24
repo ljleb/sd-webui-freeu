@@ -8,19 +8,18 @@ def patch():
     xyz_module = find_xyz_module()
     xyz_module.axis_options.extend([
         xyz_module.AxisOption("[FreeU] Enabled", str_to_bool, apply_global_state("enabled"), choices=choices_bool),
-        xyz_module.AxisOption("[FreeU] Block 1 Backbone Scale", float, apply_global_state("b0")),
-        xyz_module.AxisOption("[FreeU] Block 1 Backbone Offset", float, apply_global_state("o0")),
-        xyz_module.AxisOption("[FreeU] Block 1 Backbone Width", float, apply_global_state("w0")),
-        xyz_module.AxisOption("[FreeU] Block 1 Skip Scale", float, apply_global_state("s0")),
-        xyz_module.AxisOption("[FreeU] Block 1 Skip Cutoff", float, apply_global_state("t0")),
-        xyz_module.AxisOption("[FreeU] Block 1 Skip High End Scale", float, apply_global_state("h0")),
-
-        xyz_module.AxisOption("[FreeU] Block 2 Backbone Scale", float, apply_global_state("b1")),
-        xyz_module.AxisOption("[FreeU] Block 2 Backbone Offset", float, apply_global_state("o1")),
-        xyz_module.AxisOption("[FreeU] Block 2 Backbone Width", float, apply_global_state("w1")),
-        xyz_module.AxisOption("[FreeU] Block 2 Skip Scale", float, apply_global_state("s1")),
-        xyz_module.AxisOption("[FreeU] Block 2 Skip Cutoff", float, apply_global_state("t1")),
-        xyz_module.AxisOption("[FreeU] Block 2 Skip High End Scale", float, apply_global_state("h1")),
+        *[
+            opt
+            for index in range(len(global_state.stage_infos))
+            for opt in [
+                xyz_module.AxisOption(f"[FreeU] Stage {index+1} Backbone Scale", float, apply_global_state(f"b{index}")),
+                xyz_module.AxisOption(f"[FreeU] Stage {index+1} Backbone Offset", float, apply_global_state(f"o{index}")),
+                xyz_module.AxisOption(f"[FreeU] Stage {index+1} Backbone Width", float, apply_global_state(f"w{index}")),
+                xyz_module.AxisOption(f"[FreeU] Stage {index+1} Skip Scale", float, apply_global_state(f"s{index}")),
+                xyz_module.AxisOption(f"[FreeU] Stage {index+1} Skip Cutoff", float, apply_global_state(f"t{index}")),
+                xyz_module.AxisOption(f"[FreeU] Stage {index+1} Skip High End Scale", float, apply_global_state(f"h{index}")),
+            ]
+        ]
     ])
 
 
