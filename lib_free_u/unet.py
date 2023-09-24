@@ -50,7 +50,7 @@ def filter_skip(x, threshold, scale, scale_high):
         return x
 
     fft_device = x.device
-    if torch.backends.mps.is_available():
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         fft_device = "cpu"
 
     # FFT
