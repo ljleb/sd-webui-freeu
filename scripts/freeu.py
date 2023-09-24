@@ -20,13 +20,17 @@ class FreeUScript(scripts.Script):
                 )
 
                 reset_to_defaults = gr.Button(
-                        value="SD1.4 Recommendations",
-                        size="sm",
-                    )
+                    value="SD1.4 Recommendations",
+                    size="sm",
+                )
                 reset_to_sd21 = gr.Button(
-                        value="SD2.1 Recommendations",
-                        size="sm",
-                    )
+                    value="SD2.1 Recommendations",
+                    size="sm",
+                )
+                reset_to_sdxl = gr.Button(
+                    value="SDXL Recommendations",
+                    size="sm",
+                )
 
             flat_components = []
 
@@ -106,6 +110,11 @@ class FreeUScript(scripts.Script):
             global_state.StageInfo(1.2, 0.2),
             global_state.StageInfo(1, 1),
         ]
+        sdxl_default_stage_infos = [
+            global_state.StageInfo(1.1, 0.6),
+            global_state.StageInfo(1.2, 0.4),
+            global_state.StageInfo(1, 1),
+        ]
 
         reset_to_defaults.click(
             fn=lambda: [
@@ -120,6 +129,15 @@ class FreeUScript(scripts.Script):
             fn=lambda: [
                 v
                 for stage_info in sd21_default_stage_infos
+                for v in stage_info.to_dict(include_default=True).values()
+            ],
+            outputs=flat_components,
+        )
+
+        reset_to_sdxl.click(
+            fn=lambda: [
+                v
+                for stage_info in sdxl_default_stage_infos
                 for v in stage_info.to_dict(include_default=True).values()
             ],
             outputs=flat_components,
