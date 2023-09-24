@@ -70,14 +70,6 @@ class FreeUScript(scripts.Script):
                         )
                         default_stage_info.skip_factor = skip_scale.value
 
-                        skip_cutoff = gr.Slider(
-                            label=f"Skip {stage_n} Cutoff",
-                            minimum=0.0,
-                            maximum=1.0,
-                            value=default_stage_info.skip_threshold,
-                        )
-                        default_stage_info.skip_threshold = skip_cutoff.value
-
                         skip_high_end_scale = gr.Slider(
                             label=f"Skip {stage_n} High End Scale",
                             minimum=-1,
@@ -85,6 +77,14 @@ class FreeUScript(scripts.Script):
                             value=default_stage_info.skip_high_end_factor,
                         )
                         default_stage_info.skip_high_end_factor = skip_high_end_scale.value
+
+                        skip_cutoff = gr.Slider(
+                            label=f"Skip {stage_n} Cutoff",
+                            minimum=0.0,
+                            maximum=1.0,
+                            value=default_stage_info.skip_threshold,
+                        )
+                        default_stage_info.skip_threshold = skip_cutoff.value
 
                 flat_components.extend([
                     backbone_scale,
