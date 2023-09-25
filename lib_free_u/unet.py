@@ -137,10 +137,10 @@ def get_schedule_ratio():
 
 
 def to_denoising_step(number: Union[float, int]) -> int:
-    if isinstance(number, float) and 0 <= number <= 1:
+    if isinstance(number, float):
         return int(number * shared.state.sampling_steps)
 
-    return int(max(0.0, number))
+    return number
 
 
 def lerp(a, b, r):
