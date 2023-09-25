@@ -2,7 +2,7 @@ import functools
 import math
 import pathlib
 import sys
-from typing import Tuple
+from typing import Tuple, Union
 from lib_free_u import global_state
 from modules import scripts, shared
 from modules.sd_hijack_unet import th
@@ -121,8 +121,8 @@ def ratio_to_region(width: float, offset: float, n: int) -> Tuple[int, int, bool
 
 
 def get_schedule_ratio():
-    start_step = int(global_state.start_ratio * shared.state.sampling_steps) if isinstance(global_state.start_ratio, float) else global_state.start_ratio
-    stop_step = int(global_state.stop_ratio * shared.state.sampling_steps) if isinstance(global_state.stop_ratio, float) else global_state.stop_ratio
+    start_step = to_denoising_step(global_state.start_ratio)
+    stop_step = to_denoising_step(global_state.stop_ratio)
 
     if start_step == stop_step:
         smooth_schedule_ratio = 0.0
@@ -134,6 +134,13 @@ def get_schedule_ratio():
     flat_schedule_ratio = 1.0 if start_step <= global_state.current_sampling_step < stop_step else 0.0
 
     return lerp(flat_schedule_ratio, smooth_schedule_ratio, global_state.transition_smoothness)
+
+
+def to_denoising_step(number: Union[float, int]) -> int:
+    if isinstance(number, float) and 0 <= number <= 1:
+        return int(number * shared.state.sampling_steps)
+
+    return int(max(0.0, number))
 
 
 def lerp(a, b, r):
