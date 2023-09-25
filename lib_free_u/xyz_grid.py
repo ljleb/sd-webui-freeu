@@ -1,3 +1,4 @@
+import sys
 from types import ModuleType
 from typing import Optional
 from modules import scripts
@@ -6,8 +7,15 @@ from lib_free_u import global_state
 
 def patch():
     xyz_module = find_xyz_module()
+    if xyz_module is None:
+        print("[sd-webui-freeu]", "xyz_grid.py not found.", file=sys.stderr)
+        return
+
     xyz_module.axis_options.extend([
         xyz_module.AxisOption("[FreeU] Enabled", str_to_bool, apply_global_state("enabled"), choices=choices_bool),
+        xyz_module.AxisOption("[FreeU] Start At Step", int_or_float, apply_global_state("start_ratio")),
+        xyz_module.AxisOption("[FreeU] Stop At Step", int_or_float, apply_global_state("stop_ratio")),
+        xyz_module.AxisOption("[FreeU] Transition Smoothness", int_or_float, apply_global_state("transition_smoothness")),
         *[
             opt
             for index in range(len(global_state.stage_infos))
@@ -41,6 +49,13 @@ def str_to_bool(string):
         return False
     else:
         raise ValueError(f"Could not convert string to boolean: {string}")
+
+
+def int_or_float(string):
+    try:
+        return int(string)
+    except ValueError:
+        return float(string)
 
 
 def choices_bool():

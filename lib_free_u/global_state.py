@@ -1,6 +1,7 @@
 import dataclasses
 import inspect
 import re
+from typing import Union
 
 
 @dataclasses.dataclass
@@ -42,12 +43,16 @@ STAGE_INFO_ARGS_LEN = len(inspect.getfullargspec(StageInfo.__init__)[0]) - 1  # 
 
 
 enabled: bool = False
+start_ratio: Union[float, int] = 0.0
+stop_ratio: Union[float, int] = 1.0
+transition_smoothness: float = 0.0
 stage_infos = [
     StageInfo(),
     StageInfo(),
     StageInfo(),
 ]
 xyz_locked_attrs: set = set()
+current_sampling_step: float = 0
 
 shorthand_re = re.compile(r"^([a-z]{1,2})([0-9]+)$")
 

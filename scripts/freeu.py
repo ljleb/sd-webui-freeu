@@ -1,5 +1,5 @@
 import json
-from modules import scripts, processing
+from modules import scripts, script_callbacks, processing
 import gradio as gr
 from lib_free_u import global_state, unet, xyz_grid
 
@@ -30,6 +30,28 @@ class FreeUScript(scripts.Script):
                 reset_to_sdxl = gr.Button(
                     value="SDXL Recommendations",
                     size="sm",
+                )
+
+            with gr.Row():
+                start_ratio = gr.Slider(
+                    label="Start At Step",
+                    minimum=0,
+                    maximum=1,
+                    value=0,
+                )
+
+                stop_ratio = gr.Slider(
+                    label="Stop At Step",
+                    minimum=0,
+                    maximum=1,
+                    value=1,
+                )
+
+                transition_smoothness = gr.Slider(
+                    label="Transition Smoothness",
+                    minimum=0,
+                    maximum=1,
+                    value=0,
                 )
 
             flat_components = []
@@ -143,22 +165,42 @@ class FreeUScript(scripts.Script):
             outputs=flat_components,
         )
 
-        infotext_component = gr.HTML(visible=False, interactive=False)
+        schedule_infotext = gr.HTML(visible=False, interactive=False)
+        stages_infotext = gr.HTML(visible=False, interactive=False)
 
-        infotext_component.change(
-            fn=self.on_infotext_update,
-            inputs=[infotext_component],
-            outputs=[infotext_component, enabled, *flat_components],
+        schedule_infotext.change(
+            fn=self.on_schedule_infotext_update,
+            inputs=[schedule_infotext],
+            outputs=[schedule_infotext, start_ratio, stop_ratio, transition_smoothness],
+        )
+        stages_infotext.change(
+            fn=self.on_stages_infotext_update,
+            inputs=[stages_infotext],
+            outputs=[stages_infotext, enabled, *flat_components],
         )
 
         self.infotext_fields = [
-            (infotext_component, "FreeU Stages"),
+            (schedule_infotext, "FreeU Schedule"),
+            (stages_infotext, "FreeU Stages"),
         ]
-        self.paste_field_names = ["FreeU Stages"]
+        self.paste_field_names = [f for _, f in self.infotext_fields]
 
-        return enabled, *flat_components
+        return enabled, start_ratio, stop_ratio, transition_smoothness, *flat_components
 
-    def on_infotext_update(self, infotext):
+    def on_schedule_infotext_update(self, infotext):
+        if not infotext:
+            return (gr.skip(),) * 4
+
+        start_ratio, stop_ratio, transition_smoothness, *_ = infotext.split(", ")
+
+        return (
+            gr.update(value=""),
+            gr.update(value=float(start_ratio)),
+            gr.update(value=float(stop_ratio)),
+            gr.update(value=float(transition_smoothness)),
+        )
+
+    def on_stages_infotext_update(self, infotext):
         if not infotext:
             return (gr.skip(),) * (2 + len(global_state.stage_infos) * global_state.STAGE_INFO_ARGS_LEN)
 
@@ -185,11 +227,15 @@ class FreeUScript(scripts.Script):
     def process(
         self,
         p: processing.StableDiffusionProcessing,
-        enabled: bool,
+        enabled: bool, start_ratio: float, stop_ratio: float, transition_smoothness: float,
         *flat_stage_infos
     ):
+        global_state.current_sampling_step = 0
         global_state.update(
             enabled=enabled,
+            start_ratio=float(start_ratio),
+            stop_ratio=float(stop_ratio),
+            transition_smoothness=float(transition_smoothness),
             stage_infos=group_stage_infos(flat_stage_infos),
         )
         global_state.xyz_locked_attrs.clear()
@@ -202,6 +248,14 @@ class FreeUScript(scripts.Script):
                 # strip all empty dicts
                 if last_d or stage_info.to_dict() and (last_d := True)
             ])))
+            p.extra_generation_params["FreeU Schedule"] = ", ".join([
+                str(start_ratio),
+                str(stop_ratio),
+                str(transition_smoothness),
+            ])
+
+    def postprocess_batch(self, p, *args, **kwargs):
+        global_state.current_sampling_step = 0
 
 
 def group_stage_infos(flat_components):
@@ -209,6 +263,13 @@ def group_stage_infos(flat_components):
         global_state.StageInfo(*flat_components[i:i + global_state.STAGE_INFO_ARGS_LEN])
         for i in range(0, len(flat_components), global_state.STAGE_INFO_ARGS_LEN)
     ]
+
+
+def on_cfg_after_cfg(*_args, **_kwargs):
+    global_state.current_sampling_step += 1
+
+
+script_callbacks.on_cfg_after_cfg(on_cfg_after_cfg)
 
 
 unet.patch()
