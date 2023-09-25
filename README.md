@@ -11,4 +11,4 @@ implementation of [FreeU](https://github.com/ChenyangSi/FreeU) as an [a1111 sd w
 - Backbone n Width: width of the window applied to the backbone
 - Skip n Scale: scalar applied to the low frequencies (low end) of the skip connection during UNet stage n
 - Skip n High End Scale: scalar applied to the high frequencies (high end) of the skip connection
-- Skip n Cutoff: ratio that separates low from high frequencies, 0 means single out the lowest frequency and 1 means scale all frequencies with "Skip n Scale"
+- Skip n Cutoff: ratio that separates low from high frequencies, 0 means to control the single lowest frequency with "Skip n Scale" and 1 means scale all frequencies with "Skip n Scale"
