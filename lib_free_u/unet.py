@@ -136,9 +136,12 @@ def get_schedule_ratio():
     return lerp(flat_schedule_ratio, smooth_schedule_ratio, global_state.transition_smoothness)
 
 
-def to_denoising_step(number: Union[float, int]) -> int:
+def to_denoising_step(number: Union[float, int], steps=None) -> int:
+    if steps is None:
+        steps = shared.state.sampling_steps
+
     if isinstance(number, float):
-        return int(number * shared.state.sampling_steps)
+        return int(number * steps)
 
     return number
 

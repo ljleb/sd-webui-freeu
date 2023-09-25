@@ -6,6 +6,8 @@ from lib_free_u import global_state, unet, xyz_grid
 
 txt2img_steps_component = None
 img2img_steps_component = None
+txt2img_steps_callbacks = []
+img2img_steps_callbacks = []
 
 
 class FreeUScript(scripts.Script):
@@ -16,7 +18,11 @@ class FreeUScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        steps_component = img2img_steps_component if is_img2img else txt2img_steps_component
+        steps_component, steps_callbacks = (
+            (img2img_steps_component, img2img_steps_callbacks)
+            if is_img2img else
+            (txt2img_steps_component, txt2img_steps_callbacks)
+        )
 
         with gr.Accordion(open=False, label=self.title()):
             with gr.Row():
@@ -174,11 +180,18 @@ class FreeUScript(scripts.Script):
         schedule_infotext = gr.HTML(visible=False, interactive=False)
         stages_infotext = gr.HTML(visible=False, interactive=False)
 
-        schedule_infotext.change(
-            fn=self.on_schedule_infotext_update,
-            inputs=[schedule_infotext, steps_component],
-            outputs=[schedule_infotext, start_ratio, stop_ratio, transition_smoothness],
-        )
+        def register_schedule_infotext_change(steps_component):
+            schedule_infotext.change(
+                fn=self.on_schedule_infotext_update,
+                inputs=[schedule_infotext, steps_component],
+                outputs=[schedule_infotext, start_ratio, stop_ratio, transition_smoothness],
+            )
+
+        if steps_component is None:
+            steps_callbacks.append(register_schedule_infotext_change)
+        else:
+            register_schedule_infotext_change(steps_component)
+
         stages_infotext.change(
             fn=self.on_stages_infotext_update,
             inputs=[stages_infotext],
@@ -201,8 +214,8 @@ class FreeUScript(scripts.Script):
 
         return (
             gr.update(value=""),
-            gr.update(value=unet.to_denoising_step(xyz_grid.int_or_float(start_ratio)) / steps),
-            gr.update(value=unet.to_denoising_step(xyz_grid.int_or_float(stop_ratio)) / steps),
+            gr.update(value=unet.to_denoising_step(xyz_grid.int_or_float(start_ratio), steps) / steps),
+            gr.update(value=unet.to_denoising_step(xyz_grid.int_or_float(stop_ratio), steps) / steps),
             gr.update(value=float(transition_smoothness)),
         )
 
@@ -281,11 +294,15 @@ script_callbacks.on_cfg_after_cfg(on_cfg_after_cfg)
 def on_before_component(component, **kwargs):
     global txt2img_steps_component, img2img_steps_component
 
-    if kwargs.get("elem_id", None) == "txt2img_steps":
-        txt2img_steps_component = component
-
     if kwargs.get("elem_id", None) == "img2img_steps":
         img2img_steps_component = component
+        for callback in img2img_steps_callbacks:
+            callback(component)
+
+    if kwargs.get("elem_id", None) == "txt2img_steps":
+        txt2img_steps_component = component
+        for callback in txt2img_steps_callbacks:
+            callback(component)
 
 
 script_callbacks.on_before_component(on_before_component)
