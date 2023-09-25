@@ -4,6 +4,10 @@ import gradio as gr
 from lib_free_u import global_state, unet, xyz_grid
 
 
+txt2img_steps_component = None
+img2img_steps_component = None
+
+
 class FreeUScript(scripts.Script):
     def title(self):
         return "FreeU"
@@ -12,6 +16,8 @@ class FreeUScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
+        steps_component = img2img_steps_component if is_img2img else txt2img_steps_component
+
         with gr.Accordion(open=False, label=self.title()):
             with gr.Row():
                 enabled = gr.Checkbox(
@@ -170,7 +176,7 @@ class FreeUScript(scripts.Script):
 
         schedule_infotext.change(
             fn=self.on_schedule_infotext_update,
-            inputs=[schedule_infotext],
+            inputs=[schedule_infotext, steps_component],
             outputs=[schedule_infotext, start_ratio, stop_ratio, transition_smoothness],
         )
         stages_infotext.change(
@@ -187,7 +193,7 @@ class FreeUScript(scripts.Script):
 
         return enabled, start_ratio, stop_ratio, transition_smoothness, *flat_components
 
-    def on_schedule_infotext_update(self, infotext):
+    def on_schedule_infotext_update(self, infotext, steps):
         if not infotext:
             return (gr.skip(),) * 4
 
@@ -195,8 +201,8 @@ class FreeUScript(scripts.Script):
 
         return (
             gr.update(value=""),
-            gr.update(value=float(start_ratio)),
-            gr.update(value=float(stop_ratio)),
+            gr.update(value=unet.to_denoising_step(xyz_grid.int_or_float(start_ratio)) / steps),
+            gr.update(value=unet.to_denoising_step(xyz_grid.int_or_float(stop_ratio)) / steps),
             gr.update(value=float(transition_smoothness)),
         )
 
@@ -249,9 +255,9 @@ class FreeUScript(scripts.Script):
                 if last_d or stage_info.to_dict() and (last_d := True)
             ])))
             p.extra_generation_params["FreeU Schedule"] = ", ".join([
-                str(start_ratio),
-                str(stop_ratio),
-                str(transition_smoothness),
+                str(global_state.start_ratio),
+                str(global_state.stop_ratio),
+                str(global_state.transition_smoothness),
             ])
 
     def postprocess_batch(self, p, *args, **kwargs):
@@ -270,6 +276,19 @@ def on_cfg_after_cfg(*_args, **_kwargs):
 
 
 script_callbacks.on_cfg_after_cfg(on_cfg_after_cfg)
+
+
+def on_before_component(component, **kwargs):
+    global txt2img_steps_component, img2img_steps_component
+
+    if kwargs.get("elem_id", None) == "txt2img_steps":
+        txt2img_steps_component = component
+
+    if kwargs.get("elem_id", None) == "img2img_steps":
+        img2img_steps_component = component
+
+
+script_callbacks.on_before_component(on_before_component)
 
 
 unet.patch()
