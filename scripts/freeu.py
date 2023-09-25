@@ -18,12 +18,6 @@ class FreeUScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        steps_component, steps_callbacks = (
-            (img2img_steps_component, img2img_steps_callbacks)
-            if is_img2img else
-            (txt2img_steps_component, txt2img_steps_callbacks)
-        )
-
         with gr.Accordion(open=False, label=self.title()):
             with gr.Row():
                 enabled = gr.Checkbox(
@@ -187,6 +181,12 @@ class FreeUScript(scripts.Script):
                 outputs=[schedule_infotext, start_ratio, stop_ratio, transition_smoothness],
             )
 
+        steps_component, steps_callbacks = (
+            (img2img_steps_component, img2img_steps_callbacks)
+            if is_img2img else
+            (txt2img_steps_component, txt2img_steps_callbacks)
+        )
+
         if steps_component is None:
             steps_callbacks.append(register_schedule_infotext_change)
         else:
@@ -291,7 +291,7 @@ def on_cfg_after_cfg(*_args, **_kwargs):
 script_callbacks.on_cfg_after_cfg(on_cfg_after_cfg)
 
 
-def on_before_component(component, **kwargs):
+def on_after_component(component, **kwargs):
     global txt2img_steps_component, img2img_steps_component
 
     if kwargs.get("elem_id", None) == "img2img_steps":
@@ -305,7 +305,7 @@ def on_before_component(component, **kwargs):
             callback(component)
 
 
-script_callbacks.on_before_component(on_before_component)
+script_callbacks.on_after_component(on_after_component)
 
 
 unet.patch()
