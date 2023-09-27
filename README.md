@@ -32,27 +32,27 @@ You can pass a single dict as the alwayson script args when making API calls:
                 "transition_smoothness": 0.1,
                 "stage_infos": [
                     {
-                        "backbone_factor": 0.8,
+                        "backbone_factor": 1.2,
                         "backbone_offset": 0.5,
                         "backbone_width": 0.75,
-                        "skip_factor": 1.1,
-                        "skip_high_end_factor": 0.9,
+                        "skip_factor": 0.9,
+                        "skip_high_end_factor": 1.1,
                         "skip_cutoff": 0.3
                     },
                     {
-                        "backbone_factor": 0.8,
+                        "backbone_factor": 1.4,
                         "backbone_offset": 0.5,
                         "backbone_width": 0.75,
-                        "skip_factor": 1.1,
-                        "skip_high_end_factor": 0.9,
+                        "skip_factor": 0.2,
+                        "skip_high_end_factor": 1.1,
                         "skip_cutoff": 0.3
                     },
                     {
-                        "backbone_factor": 0.8,
+                        "backbone_factor": 1.1,
                         "backbone_offset": 0.5,
                         "backbone_width": 0.75,
-                        "skip_factor": 1.1,
-                        "skip_high_end_factor": 0.9,
+                        "skip_factor": 0.9,
+                        "skip_high_end_factor": 1.1,
                         "skip_cutoff": 0.3
                     }
                 ]
