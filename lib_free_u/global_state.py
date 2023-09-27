@@ -41,9 +41,6 @@ class State:
     stage_infos: List[Union[StageInfo, dict]] = dataclasses.field(default_factory=lambda: [StageInfo() for _ in range(STAGES_COUNT)])
 
     def __post_init__(self):
-        for _ in range(max(0, STAGES_COUNT - len(self.stage_infos))):
-            self.stage_infos.append(StageInfo())
-
         self.stage_infos = self.group_stage_infos()
 
     def group_stage_infos(self):
@@ -60,6 +57,9 @@ class State:
                 next_i = i + STAGE_INFO_ARGS_LEN
                 res.append(StageInfo(*self.stage_infos[i:next_i]))
                 i = next_i
+
+        for _ in range(max(0, STAGES_COUNT - len(res))):
+            res.append(StageInfo())
 
         return res
 
