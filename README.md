@@ -62,7 +62,6 @@ You can pass a single dict as the alwayson script args when making API calls:
 }
 ```
 
-
 It is possible to omit any of the entries. For example:
 
 ```json
