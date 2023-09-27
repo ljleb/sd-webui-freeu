@@ -26,12 +26,34 @@ You can pass a single dict as the alwayson script args when making API calls:
     "alwayson_scripts": {
         "freeu": {
             "args": [{
+                "enable": true,
                 "start_ratio": 0.1,
+                "stop_ratio": 0.9,
+                "transition_smoothness": 0.1,
                 "stage_infos": [
                     {
                         "backbone_factor": 0.8,
                         "backbone_offset": 0.5,
-                        "skip_high_end_factor": 1.1
+                        "backbone_width": 0.75,
+                        "skip_factor": 1.1,
+                        "skip_high_end_factor": 0.9,
+                        "skip_cutoff": 0.3
+                    },
+                    {
+                        "backbone_factor": 0.8,
+                        "backbone_offset": 0.5,
+                        "backbone_width": 0.75,
+                        "skip_factor": 1.1,
+                        "skip_high_end_factor": 0.9,
+                        "skip_cutoff": 0.3
+                    },
+                    {
+                        "backbone_factor": 0.8,
+                        "backbone_offset": 0.5,
+                        "backbone_width": 0.75,
+                        "skip_factor": 1.1,
+                        "skip_high_end_factor": 0.9,
+                        "skip_cutoff": 0.3
                     }
                 ]
             }]
@@ -40,3 +62,26 @@ You can pass a single dict as the alwayson script args when making API calls:
 }
 ```
 
+
+It is possible to omit any of the entries. For example:
+
+```json
+{
+    "alwayson_scripts": {
+        "freeu": {
+            "args": [{
+                "start_ratio": 0.1,
+                "stage_infos": [
+                    {
+                        "backbone_factor": 0.8,
+                        "backbone_offset": 0.5,
+                        "skip_high_end_factor": 0.9
+                    }
+                ]
+            }]
+        }
+    }
+}
+```
+
+Here, since there is a single dict in the `stage_infos` array, freeu will only have an effect during the first stage of the unet.
