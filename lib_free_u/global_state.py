@@ -118,4 +118,6 @@ class State:
             self.__dict__[key] = value
 
 
+STATE_ARGS_LEN = len(inspect.getfullargspec(State.__init__)[0]) - 1  # off by one because of self
+
 instance = State()

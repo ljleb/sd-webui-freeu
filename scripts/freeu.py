@@ -252,32 +252,29 @@ class FreeUScript(scripts.Script):
         if isinstance(args[0], dict):
             state_update = global_state.State(**args[0])
         elif isinstance(args[0], bool):
-            state_update = global_state.State({
-                "enable": args[0],
-                "start_ratio": args[1],
-                "stop_ratio": args[2],
-                "transition_smoothness": args[3],
-                "stage_infos": args[4:],
-            })
+            i = global_state.STATE_ARGS_LEN - 1
+            state_update = global_state.State(args[0], *[float(n) for n in args[1:i]], args[i:])
         else:
             raise TypeError(f"Unrecognized args sequence starting with type {type(args[0])}")
 
         global_state.instance.update(state_update)
         global_state.xyz_locked_attrs.clear()
 
-        if global_state.instance.enable:
-            last_d = False
-            p.extra_generation_params["FreeU Stages"] = json.dumps(list(reversed([
-                stage_info.to_dict()
-                for stage_info in reversed(global_state.instance.stage_infos)
-                # strip all empty dicts
-                if last_d or stage_info.to_dict() and (last_d := True)
-            ])))
-            p.extra_generation_params["FreeU Schedule"] = ", ".join([
-                str(global_state.instance.start_ratio),
-                str(global_state.instance.stop_ratio),
-                str(global_state.instance.transition_smoothness),
-            ])
+        if not global_state.instance.enable:
+            return
+
+        last_d = False
+        p.extra_generation_params["FreeU Stages"] = json.dumps(list(reversed([
+            stage_info.to_dict()
+            for stage_info in reversed(global_state.instance.stage_infos)
+            # strip all empty dicts
+            if last_d or stage_info.to_dict() and (last_d := True)
+        ])))
+        p.extra_generation_params["FreeU Schedule"] = ", ".join([
+            str(global_state.instance.start_ratio),
+            str(global_state.instance.stop_ratio),
+            str(global_state.instance.transition_smoothness),
+        ])
 
     def postprocess_batch(self, p, *args, **kwargs):
         global_state.current_sampling_step = 0
