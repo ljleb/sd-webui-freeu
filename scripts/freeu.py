@@ -284,11 +284,18 @@ def group_stage_infos(flat_components):
     ]
 
 
-def on_cfg_after_cfg(*_args, **_kwargs):
+def increment_sampling_step(*_args, **_kwargs):
     global_state.current_sampling_step += 1
 
 
-script_callbacks.on_cfg_after_cfg(on_cfg_after_cfg)
+try:
+    script_callbacks.on_cfg_after_cfg(increment_sampling_step)
+except AttributeError:
+    # webui < 1.6.0
+    # normally we should increment the current sampling step after cfg
+    # but as long as we don't need to run code during cfg it should be fine to increment early
+    script_callbacks.on_cfg_denoised(increment_sampling_step)
+
 
 
 def on_after_component(component, **kwargs):
