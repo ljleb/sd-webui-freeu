@@ -46,7 +46,7 @@ class State:
     def group_stage_infos(self):
         res = []
         i = 0
-        while i < len(self.stage_infos):
+        while i < len(self.stage_infos) and len(res) < STAGES_COUNT:
             if isinstance(self.stage_infos[i], StageInfo):
                 res.append(self.stage_infos[i])
                 i += 1
@@ -58,7 +58,7 @@ class State:
                 res.append(StageInfo(*self.stage_infos[i:next_i]))
                 i = next_i
 
-        for _ in range(max(0, STAGES_COUNT - len(res))):
+        for _ in range(STAGES_COUNT - len(res)):
             res.append(StageInfo())
 
         return res
