@@ -85,3 +85,5 @@ It is possible to omit any of the entries. For example:
 ```
 
 Here, since there is a single dict in the `stage_infos` array, freeu will only have an effect during the first stage of the unet.
+If you want to modify only the second stage, prepend the `"stage_infos"` array with 1 empty dict `{}`.
+If you want to modify only the third stage, prepend the `"stage_infos"` array with 2 empty dicts.
