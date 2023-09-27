@@ -31,7 +31,7 @@ def patch():
 
 
 def free_u_cat_hijack(hs, *args, original_function, **kwargs):
-    if not global_state.enabled:
+    if not global_state.instance.enable:
         return original_function(hs, *args, **kwargs)
 
     schedule_ratio = get_schedule_ratio()
@@ -48,7 +48,7 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
     dims = h.shape[1]
     try:
         index = [1280, 640, 320].index(dims)
-        stage_info = global_state.stage_infos[index]
+        stage_info = global_state.instance.stage_infos[index]
     except ValueError:
         stage_info = None
 
@@ -62,7 +62,7 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
         h[:, mask] *= lerp(1, stage_info.backbone_factor, schedule_ratio)
         h_skip = filter_skip(
             h_skip,
-            threshold=stage_info.skip_threshold,
+            threshold=stage_info.skip_cutoff,
             scale=lerp(1, stage_info.skip_factor, schedule_ratio),
             scale_high=lerp(1, stage_info.skip_high_end_factor, schedule_ratio),
         )
@@ -121,8 +121,8 @@ def ratio_to_region(width: float, offset: float, n: int) -> Tuple[int, int, bool
 
 
 def get_schedule_ratio():
-    start_step = to_denoising_step(global_state.start_ratio)
-    stop_step = to_denoising_step(global_state.stop_ratio)
+    start_step = to_denoising_step(global_state.instance.start_ratio)
+    stop_step = to_denoising_step(global_state.instance.stop_ratio)
 
     if start_step == stop_step:
         smooth_schedule_ratio = 0.0
@@ -133,7 +133,7 @@ def get_schedule_ratio():
 
     flat_schedule_ratio = 1.0 if start_step <= global_state.current_sampling_step < stop_step else 0.0
 
-    return lerp(flat_schedule_ratio, smooth_schedule_ratio, global_state.transition_smoothness)
+    return lerp(flat_schedule_ratio, smooth_schedule_ratio, global_state.instance.transition_smoothness)
 
 
 def to_denoising_step(number: Union[float, int], steps=None) -> int:

@@ -12,13 +12,13 @@ def patch():
         return
 
     xyz_module.axis_options.extend([
-        xyz_module.AxisOption("[FreeU] Enabled", str_to_bool, apply_global_state("enabled"), choices=choices_bool),
+        xyz_module.AxisOption("[FreeU] Enabled", str_to_bool, apply_global_state("enable"), choices=choices_bool),
         xyz_module.AxisOption("[FreeU] Start At Step", int_or_float, apply_global_state("start_ratio")),
         xyz_module.AxisOption("[FreeU] Stop At Step", int_or_float, apply_global_state("stop_ratio")),
         xyz_module.AxisOption("[FreeU] Transition Smoothness", int_or_float, apply_global_state("transition_smoothness")),
         *[
             opt
-            for index in range(len(global_state.stage_infos))
+            for index in range(global_state.STAGES_COUNT)
             for opt in [
                 xyz_module.AxisOption(f"[FreeU] Stage {index+1} Backbone Scale", float, apply_global_state(f"b{index}")),
                 xyz_module.AxisOption(f"[FreeU] Stage {index+1} Backbone Offset", float, apply_global_state(f"o{index}")),
@@ -31,10 +31,10 @@ def patch():
     ])
 
 
-def apply_global_state(attr):
+def apply_global_state(k):
     def callback(_p, v, _vs):
-        global_state.update(**{attr: v})
-        global_state.xyz_locked_attrs.add(attr)
+        global_state.instance.update_attr(k, v)
+        global_state.xyz_locked_attrs.add(k)
 
     return callback
 

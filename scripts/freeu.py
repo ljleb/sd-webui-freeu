@@ -1,5 +1,5 @@
 import json
-from modules import scripts, script_callbacks, processing
+from modules import scripts, script_callbacks, processing, shared
 import gradio as gr
 from lib_free_u import global_state, unet, xyz_grid
 
@@ -68,7 +68,7 @@ class FreeUScript(scripts.Script):
                 global_state.StageInfo(1, 1),
             ]
 
-            for index in range(len(global_state.stage_infos)):
+            for index in range(global_state.STAGES_COUNT):
                 stage_n = index + 1
                 default_stage_info = default_stage_infos[index]
 
@@ -119,9 +119,9 @@ class FreeUScript(scripts.Script):
                             label=f"Skip {stage_n} Cutoff",
                             minimum=0.0,
                             maximum=1.0,
-                            value=default_stage_info.skip_threshold,
+                            value=default_stage_info.skip_cutoff,
                         )
-                        default_stage_info.skip_threshold = skip_cutoff.value
+                        default_stage_info.skip_cutoff = skip_cutoff.value
 
                 flat_components.extend([
                     backbone_scale,
@@ -221,7 +221,7 @@ class FreeUScript(scripts.Script):
 
     def on_stages_infotext_update(self, infotext):
         if not infotext:
-            return (gr.skip(),) * (2 + len(global_state.stage_infos) * global_state.STAGE_INFO_ARGS_LEN)
+            return (gr.skip(),) * (2 + global_state.STAGES_COUNT * global_state.STAGE_INFO_ARGS_LEN)
 
         stage_infos = json.loads(infotext)
         stage_infos = [
@@ -230,12 +230,12 @@ class FreeUScript(scripts.Script):
         ]
         stage_infos.extend([
             global_state.StageInfo()
-            for _ in range(len(global_state.stage_infos) - len(stage_infos))
+            for _ in range(global_state.STAGES_COUNT - len(stage_infos))
         ])
 
         return (
             gr.update(value=""),
-            gr.update(value=True),
+            gr.update(value=shared.opts.data.get("freeu_png_info_auto_enable", True)),
             *(
                 gr.update(value=v)
                 for stage_info in stage_infos
@@ -246,42 +246,38 @@ class FreeUScript(scripts.Script):
     def process(
         self,
         p: processing.StableDiffusionProcessing,
-        enabled: bool, start_ratio: float, stop_ratio: float, transition_smoothness: float,
-        *flat_stage_infos
+        *args
     ):
         global_state.current_sampling_step = 0
-        global_state.update(
-            enabled=enabled,
-            start_ratio=float(start_ratio),
-            stop_ratio=float(stop_ratio),
-            transition_smoothness=float(transition_smoothness),
-            stage_infos=group_stage_infos(flat_stage_infos),
-        )
+        if isinstance(args[0], dict):
+            state_update = global_state.State(**args[0])
+        elif isinstance(args[0], bool):
+            i = global_state.STATE_ARGS_LEN - 1
+            state_update = global_state.State(args[0], *[float(n) for n in args[1:i]], args[i:])
+        else:
+            raise TypeError(f"Unrecognized args sequence starting with type {type(args[0])}")
+
+        global_state.instance.update(state_update)
         global_state.xyz_locked_attrs.clear()
 
-        if global_state.enabled:
-            last_d = False
-            p.extra_generation_params["FreeU Stages"] = json.dumps(list(reversed([
-                stage_info.to_dict()
-                for stage_info in reversed(global_state.stage_infos)
-                # strip all empty dicts
-                if last_d or stage_info.to_dict() and (last_d := True)
-            ])))
-            p.extra_generation_params["FreeU Schedule"] = ", ".join([
-                str(global_state.start_ratio),
-                str(global_state.stop_ratio),
-                str(global_state.transition_smoothness),
-            ])
+        if not global_state.instance.enable:
+            return
+
+        last_d = False
+        p.extra_generation_params["FreeU Stages"] = json.dumps(list(reversed([
+            stage_info.to_dict()
+            for stage_info in reversed(global_state.instance.stage_infos)
+            # strip all empty dicts
+            if last_d or stage_info.to_dict() and (last_d := True)
+        ])))
+        p.extra_generation_params["FreeU Schedule"] = ", ".join([
+            str(global_state.instance.start_ratio),
+            str(global_state.instance.stop_ratio),
+            str(global_state.instance.transition_smoothness),
+        ])
 
     def postprocess_batch(self, p, *args, **kwargs):
         global_state.current_sampling_step = 0
-
-
-def group_stage_infos(flat_components):
-    return [
-        global_state.StageInfo(*flat_components[i:i + global_state.STAGE_INFO_ARGS_LEN])
-        for i in range(0, len(flat_components), global_state.STAGE_INFO_ARGS_LEN)
-    ]
 
 
 def increment_sampling_step(*_args, **_kwargs):
@@ -295,7 +291,6 @@ except AttributeError:
     # normally we should increment the current sampling step after cfg
     # but as long as we don't need to run code during cfg it should be fine to increment early
     script_callbacks.on_cfg_denoised(increment_sampling_step)
-
 
 
 def on_after_component(component, **kwargs):
@@ -313,6 +308,21 @@ def on_after_component(component, **kwargs):
 
 
 script_callbacks.on_after_component(on_after_component)
+
+
+def on_ui_settings():
+    section = ("freeu", "FreeU")
+    shared.opts.add_option(
+        "freeu_png_info_auto_enable",
+        shared.OptionInfo(
+            default=True,
+            label="Auto enable when loading the PNG Info of a generation that used FreeU",
+            section=section,
+        )
+    )
+
+
+script_callbacks.on_ui_settings(on_ui_settings)
 
 
 unet.patch()

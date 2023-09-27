@@ -16,3 +16,76 @@ At each of the 3 stages of the UNet decoder:
 - Skip n Scale: scalar applied to the low frequencies (low end) of the skip connection during UNet stage n
 - Skip n High End Scale: scalar applied to the high frequencies (high end) of the skip connection
 - Skip n Cutoff: ratio that separates low from high frequencies, 0 means to control the single lowest frequency with "Skip n Scale" and 1 means scale all frequencies with "Skip n Scale"
+
+## API
+
+You can pass a single dict as the alwayson script args when making API calls:
+
+```json
+{
+    "alwayson_scripts": {
+        "freeu": {
+            "args": [{
+                "enable": true,
+                "start_ratio": 0.1,
+                "stop_ratio": 0.9,
+                "transition_smoothness": 0.1,
+                "stage_infos": [
+                    {
+                        "backbone_factor": 1.2,
+                        "backbone_offset": 0.5,
+                        "backbone_width": 0.75,
+                        "skip_factor": 0.9,
+                        "skip_high_end_factor": 1.1,
+                        "skip_cutoff": 0.3
+                    },
+                    {
+                        "backbone_factor": 1.4,
+                        "backbone_offset": 0.5,
+                        "backbone_width": 0.75,
+                        "skip_factor": 0.2,
+                        "skip_high_end_factor": 1.1,
+                        "skip_cutoff": 0.3
+                    },
+                    {
+                        "backbone_factor": 1.1,
+                        "backbone_offset": 0.5,
+                        "backbone_width": 0.75,
+                        "skip_factor": 0.9,
+                        "skip_high_end_factor": 1.1,
+                        "skip_cutoff": 0.3
+                    }
+                ]
+            }]
+        }
+    }
+}
+```
+
+It is possible to omit any of the entries. For example:
+
+```json
+{
+    "alwayson_scripts": {
+        "freeu": {
+            "args": [{
+                "start_ratio": 0.1,
+                "stage_infos": [
+                    {
+                        "backbone_factor": 0.8,
+                        "backbone_offset": 0.5,
+                        "skip_high_end_factor": 0.9
+                    }
+                ]
+            }]
+        }
+    }
+}
+```
+
+Here, since there is a single dict in the `stage_infos` array, freeu will only have an effect during the first stage of the unet.  
+If you want to modify only the second stage, prepend the `"stage_infos"` array with 1 empty dict `{}`.  
+If you want to modify only the third stage, prepend the `"stage_infos"` array with 2 empty dicts.
+
+If `"stop_ratio"` or `"start_ratio"` is an integer, then it is a step number.  
+Otherwise, it is expected to be a float between `0.0` and `1.0` and it represents a ratio of the total sampling steps.
