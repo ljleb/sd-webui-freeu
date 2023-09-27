@@ -1,7 +1,7 @@
 # sd-webui-freeu
 implementation of [FreeU](https://github.com/ChenyangSi/FreeU) as an [a1111 sd webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) extension
 
-At each stage of the UNet decoder:
+At each of the 3 stages of the UNet decoder:
 - Apply a scalar on a window over the features of the backbone
 - Tame the frequencies of the skip connection
 
