@@ -68,7 +68,7 @@ class FreeUScript(scripts.Script):
                 global_state.StageInfo(1, 1),
             ]
 
-            for index in range(len(global_state.stage_infos)):
+            for index in range(global_state.STAGES_COUNT):
                 stage_n = index + 1
                 default_stage_info = default_stage_infos[index]
 
@@ -221,7 +221,7 @@ class FreeUScript(scripts.Script):
 
     def on_stages_infotext_update(self, infotext):
         if not infotext:
-            return (gr.skip(),) * (2 + len(global_state.stage_infos) * global_state.STAGE_INFO_ARGS_LEN)
+            return (gr.skip(),) * (2 + global_state.STAGES_COUNT * global_state.STAGE_INFO_ARGS_LEN)
 
         stage_infos = json.loads(infotext)
         stage_infos = [
@@ -230,7 +230,7 @@ class FreeUScript(scripts.Script):
         ]
         stage_infos.extend([
             global_state.StageInfo()
-            for _ in range(len(global_state.stage_infos) - len(stage_infos))
+            for _ in range(global_state.STAGES_COUNT - len(stage_infos))
         ])
 
         return (
@@ -248,61 +248,39 @@ class FreeUScript(scripts.Script):
         p: processing.StableDiffusionProcessing,
         *args
     ):
+        global_state.current_sampling_step = 0
         if isinstance(args[0], dict):
-            enabled = args[0].get("enable", True)
-            start_ratio = args[0].get("start_ratio", 0.0)
-            stop_ratio = args[0].get("stop_ratio", 1.0)
-            transition_smoothness = args[0].get("transition_smoothness", 0.0)
-            stage_infos = args[0].get("stage_infos", [])
+            state_update = global_state.State(**args[0])
         elif isinstance(args[0], bool):
-            enabled, start_ratio, stop_ratio, transition_smoothness, *stage_infos = args
+            state_update = global_state.State({
+                "enable": args[0],
+                "start_ratio": args[1],
+                "stop_ratio": args[2],
+                "transition_smoothness": args[3],
+                "stage_infos": args[4:],
+            })
         else:
             raise TypeError(f"Unrecognized args sequence starting with type {type(args[0])}")
 
-        global_state.current_sampling_step = 0
-        global_state.update(
-            enabled=enabled,
-            start_ratio=float(start_ratio),
-            stop_ratio=float(stop_ratio),
-            transition_smoothness=float(transition_smoothness),
-            stage_infos=group_stage_infos(stage_infos),
-        )
+        global_state.instance.update(state_update)
         global_state.xyz_locked_attrs.clear()
 
-        if global_state.enabled:
+        if global_state.instance.enable:
             last_d = False
             p.extra_generation_params["FreeU Stages"] = json.dumps(list(reversed([
                 stage_info.to_dict()
-                for stage_info in reversed(global_state.stage_infos)
+                for stage_info in reversed(global_state.instance.stage_infos)
                 # strip all empty dicts
                 if last_d or stage_info.to_dict() and (last_d := True)
             ])))
             p.extra_generation_params["FreeU Schedule"] = ", ".join([
-                str(global_state.start_ratio),
-                str(global_state.stop_ratio),
-                str(global_state.transition_smoothness),
+                str(global_state.instance.start_ratio),
+                str(global_state.instance.stop_ratio),
+                str(global_state.instance.transition_smoothness),
             ])
 
     def postprocess_batch(self, p, *args, **kwargs):
         global_state.current_sampling_step = 0
-
-
-def group_stage_infos(flat_components):
-    res = []
-    i = 0
-    while i < len(flat_components):
-        if isinstance(flat_components[i], dict):
-            res.append(global_state.StageInfo(**flat_components[i]))
-            i += 1
-        else:
-            next_i = i + global_state.STAGE_INFO_ARGS_LEN
-            res.append(global_state.StageInfo(*flat_components[i:next_i]))
-            i = next_i
-
-    for _ in range(len(global_state.stage_infos) - len(res)):
-        res.append(global_state.StageInfo())
-
-    return res
 
 
 def increment_sampling_step(*_args, **_kwargs):
@@ -316,7 +294,6 @@ except AttributeError:
     # normally we should increment the current sampling step after cfg
     # but as long as we don't need to run code during cfg it should be fine to increment early
     script_callbacks.on_cfg_denoised(increment_sampling_step)
-
 
 
 def on_after_component(component, **kwargs):

@@ -16,3 +16,27 @@ At each of the 3 stages of the UNet decoder:
 - Skip n Scale: scalar applied to the low frequencies (low end) of the skip connection during UNet stage n
 - Skip n High End Scale: scalar applied to the high frequencies (high end) of the skip connection
 - Skip n Cutoff: ratio that separates low from high frequencies, 0 means to control the single lowest frequency with "Skip n Scale" and 1 means scale all frequencies with "Skip n Scale"
+
+## API
+
+You can pass a single dict as the alwayson script args when making API calls:
+
+```json
+{
+    "alwayson_scripts": {
+        "freeu": {
+            "args": [{
+                "start_ratio": 0.1,
+                "stage_infos": [
+                    {
+                        "backbone_factor": 0.8,
+                        "backbone_offset": 0.5,
+                        "skip_high_end_factor": 1.1
+                    }
+                ]
+            }]
+        }
+    }
+}
+```
+
