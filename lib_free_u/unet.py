@@ -62,7 +62,7 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
         h[:, mask] *= lerp(1, stage_info.backbone_factor, schedule_ratio)
         h_skip = filter_skip(
             h_skip,
-            threshold=stage_info.skip_threshold,
+            threshold=stage_info.skip_cutoff,
             scale=lerp(1, stage_info.skip_factor, schedule_ratio),
             scale_high=lerp(1, stage_info.skip_high_end_factor, schedule_ratio),
         )

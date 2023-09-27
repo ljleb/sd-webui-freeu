@@ -119,9 +119,9 @@ class FreeUScript(scripts.Script):
                             label=f"Skip {stage_n} Cutoff",
                             minimum=0.0,
                             maximum=1.0,
-                            value=default_stage_info.skip_threshold,
+                            value=default_stage_info.skip_cutoff,
                         )
-                        default_stage_info.skip_threshold = skip_cutoff.value
+                        default_stage_info.skip_cutoff = skip_cutoff.value
 
                 flat_components.extend([
                     backbone_scale,

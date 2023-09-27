@@ -10,7 +10,7 @@ class StageInfo:
     skip_factor: float = 1.0
     backbone_offset: float = 0.0
     backbone_width: float = 0.5
-    skip_threshold: float = 0.0
+    skip_cutoff: float = 0.0
     skip_high_end_factor: float = 1.0
     # <- add new fields at the end here for png info backwards compatibility
 
@@ -67,7 +67,7 @@ def update_attr(key, value):
             stage_info.backbone_width = value
             return
         elif char == "t":
-            stage_info.skip_threshold = value
+            stage_info.skip_cutoff = value
             return
         elif char == "h":
             stage_info.skip_high_end_factor = value
@@ -88,9 +88,9 @@ def update_attr(key, value):
                 elif key == "backbone_width":
                     if f"w{index}" not in xyz_locked_attrs:
                         stage_infos[index].backbone_width = value
-                elif key == "skip_threshold":
+                elif key == "skip_cutoff":
                     if f"t{index}" not in xyz_locked_attrs:
-                        stage_infos[index].skip_threshold = value
+                        stage_infos[index].skip_cutoff = value
                 elif key == "skip_high_end_factor":
                     if f"h{index}" not in xyz_locked_attrs:
                         stage_infos[index].skip_high_end_factor = value
