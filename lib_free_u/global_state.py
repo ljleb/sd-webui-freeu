@@ -16,25 +16,10 @@ class StageInfo:
 
     def to_dict(self, include_default=False):
         default_stage_info = StageInfo()
-        res = {}
-
-        if self.backbone_factor != default_stage_info.backbone_factor or include_default:
-            res["backbone_factor"] = self.backbone_factor
-
-        if self.skip_factor != default_stage_info.skip_factor or include_default:
-            res["skip_factor"] = self.skip_factor
-
-        if self.backbone_offset != default_stage_info.backbone_offset or include_default:
-            res["backbone_offset"] = self.backbone_offset
-
-        if self.backbone_width != default_stage_info.backbone_width or include_default:
-            res["backbone_width"] = self.backbone_width
-
-        if self.skip_threshold != default_stage_info.skip_threshold or include_default:
-            res["skip_threshold"] = self.skip_threshold
-
-        if self.skip_high_end_factor != default_stage_info.skip_high_end_factor or include_default:
-            res["skip_high_end_factor"] = self.skip_high_end_factor
+        res = vars(self)
+        for k, v in res.copy().items():
+            if not include_default and v == getattr(default_stage_info, k):
+                del res[k]
 
         return res
 

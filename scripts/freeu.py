@@ -246,16 +246,26 @@ class FreeUScript(scripts.Script):
     def process(
         self,
         p: processing.StableDiffusionProcessing,
-        enabled: bool, start_ratio: float, stop_ratio: float, transition_smoothness: float,
-        *flat_stage_infos
+        *args
     ):
+        if isinstance(args[0], dict):
+            enabled = args[0].get("enable", True)
+            start_ratio = args[0].get("start_ratio", 0.0)
+            stop_ratio = args[0].get("stop_ratio", 1.0)
+            transition_smoothness = args[0].get("transition_smoothness", 0.0)
+            stage_infos = args[0].get("stage_infos", [])
+        elif isinstance(args[0], bool):
+            enabled, start_ratio, stop_ratio, transition_smoothness, *stage_infos = args
+        else:
+            raise TypeError(f"Unrecognized args sequence starting with type {type(args[0])}")
+
         global_state.current_sampling_step = 0
         global_state.update(
             enabled=enabled,
             start_ratio=float(start_ratio),
             stop_ratio=float(stop_ratio),
             transition_smoothness=float(transition_smoothness),
-            stage_infos=group_stage_infos(flat_stage_infos),
+            stage_infos=group_stage_infos(stage_infos),
         )
         global_state.xyz_locked_attrs.clear()
 
@@ -278,10 +288,21 @@ class FreeUScript(scripts.Script):
 
 
 def group_stage_infos(flat_components):
-    return [
-        global_state.StageInfo(*flat_components[i:i + global_state.STAGE_INFO_ARGS_LEN])
-        for i in range(0, len(flat_components), global_state.STAGE_INFO_ARGS_LEN)
-    ]
+    res = []
+    i = 0
+    while i < len(flat_components):
+        if isinstance(flat_components[i], dict):
+            res.append(global_state.StageInfo(**flat_components[i]))
+            i += 1
+        else:
+            next_i = i + global_state.STAGE_INFO_ARGS_LEN
+            res.append(global_state.StageInfo(*flat_components[i:next_i]))
+            i = next_i
+
+    for _ in range(len(global_state.stage_infos) - len(res)):
+        res.append(global_state.StageInfo())
+
+    return res
 
 
 def increment_sampling_step(*_args, **_kwargs):
