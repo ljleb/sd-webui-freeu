@@ -1,5 +1,5 @@
 import json
-from modules import scripts, script_callbacks, processing
+from modules import scripts, script_callbacks, processing, shared
 import gradio as gr
 from lib_free_u import global_state, unet, xyz_grid
 
@@ -235,7 +235,7 @@ class FreeUScript(scripts.Script):
 
         return (
             gr.update(value=""),
-            gr.update(value=True),
+            gr.update(value=shared.opts.data.get("freeu_png_info_auto_enable", True)),
             *(
                 gr.update(value=v)
                 for stage_info in stage_infos
@@ -308,6 +308,21 @@ def on_after_component(component, **kwargs):
 
 
 script_callbacks.on_after_component(on_after_component)
+
+
+def on_ui_settings():
+    section = ("freeu", "FreeU")
+    shared.opts.add_option(
+        "freeu_png_info_auto_enable",
+        shared.OptionInfo(
+            default=True,
+            label="Auto enable when loading the PNG Info of a generation that used FreeU",
+            section=section,
+        )
+    )
+
+
+script_callbacks.on_ui_settings(on_ui_settings)
 
 
 unet.patch()
