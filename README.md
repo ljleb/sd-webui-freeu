@@ -88,4 +88,4 @@ If you want to modify only the second stage, prepend the `"stage_infos"` array w
 If you want to modify only the third stage, prepend the `"stage_infos"` array with 2 empty dicts.
 
 If `"stop_ratio"` or `"start_ratio"` is an integer, then it is a step number.  
-Otherwise, it is expected to be a float between `0.0` and `1.0` represents a ratio of the total sampling steps.
+Otherwise, it is expected to be a float between `0.0` and `1.0` and it represents a ratio of the total sampling steps.
