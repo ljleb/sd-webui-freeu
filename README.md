@@ -86,3 +86,6 @@ It is possible to omit any of the entries. For example:
 Here, since there is a single dict in the `stage_infos` array, freeu will only have an effect during the first stage of the unet.  
 If you want to modify only the second stage, prepend the `"stage_infos"` array with 1 empty dict `{}`.  
 If you want to modify only the third stage, prepend the `"stage_infos"` array with 2 empty dicts.
+
+If `"stop_ratio"` or `"start_ratio"` is an integer, then it is a step number.  
+Otherwise, it is expected to be a float between `0.0` and `1.0` represents a ratio of the total sampling steps.
