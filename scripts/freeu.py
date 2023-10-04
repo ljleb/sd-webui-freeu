@@ -1,4 +1,5 @@
 import json
+import os.path
 from modules import scripts, script_callbacks, processing, shared
 import gradio as gr
 from lib_free_u import global_state, unet, xyz_grid
@@ -9,6 +10,9 @@ img2img_steps_component = None
 txt2img_steps_callbacks = []
 img2img_steps_callbacks = []
 
+user_options = []
+freeu_options = []
+all_options = []
 
 class FreeUScript(scripts.Script):
     def title(self):
@@ -16,31 +20,114 @@ class FreeUScript(scripts.Script):
 
     def show(self, is_img2img):
         return scripts.AlwaysVisible
+    
+    def load_function(self):
+        path = os.path.join(os.path.dirname(__file__), "user-custom-settings.json")
+        if os.path.exists(path): # check if file exists
+            with open(path, "r") as f:
+                all_options = json.load(f)
+        else: # if file does not exist, return empty array
+            all_options = []
+        return all_options
+
+    def save_function(self, options):
+        path = os.path.join(os.path.dirname(__file__), "user-custom-settings.json")
+        with open(path, "w") as f:
+            json.dump(options, f)
+
+    def get_index_by_name(self, name: str, array: list) -> int:
+        for i in range(len(array)):
+            if array[i]["name"] == name:
+                return i
+        return -1
 
     def ui(self, is_img2img):
+
+        default_stage_infos = [
+            global_state.StageInfo(1.2, 0.9),
+            global_state.StageInfo(1.4, 0.2),
+            global_state.StageInfo(1, 1),
+        ]
+        sd21_default_stage_infos = [
+            global_state.StageInfo(1.1, 0.9),
+            global_state.StageInfo(1.2, 0.2),
+            global_state.StageInfo(1, 1),
+        ]
+        sdxl_default_stage_infos = [
+            global_state.StageInfo(1.1, 0.6),
+            global_state.StageInfo(1.2, 0.4),
+            global_state.StageInfo(1, 1),
+        ]
+
+        user_options.clear()
+        freeu_options.clear()
+        all_options.clear()
+
+        user_options.extend(self.load_function())
+        freeu_options.extend([
+            {"name": "SD1.4 Recommendations", "freeu": [
+                v
+                for stage_info in default_stage_infos
+                for v in stage_info.to_dict(include_default=True).values()
+            ], "SystemDefault": True, "start": 0.2, "stop": 1, "smooth":0},
+            {"name": "SD2.1 Recommendations", "freeu": [
+                v
+                for stage_info in sd21_default_stage_infos
+                for v in stage_info.to_dict(include_default=True).values()
+            ], "SystemDefault": True, "start": 0.2, "stop": 1, "smooth":0},
+            {"name": "SDXL Recommendations", "freeu": [
+                v
+                for stage_info in sdxl_default_stage_infos
+                for v in stage_info.to_dict(include_default=True).values()
+            ], "SystemDefault": True, "start": 0.2, "stop": 1, "smooth":0},
+            ])
+        
+        all_options.extend(freeu_options)
+        all_options.extend(user_options)
+
         with gr.Accordion(open=False, label=self.title()):
-            with gr.Row():
+            with gr.Row(margin="0.5em"):
                 enabled = gr.Checkbox(
                     label="Enable",
                     value=False,
                 )
-
-                reset_to_defaults = gr.Button(
-                    value="SD1.4 Recommendations",
-                    size="sm",
+                user_settings_name = gr.Dropdown(
+                    show_label=False,
+                    choices=[x["name"] for x in all_options], value=all_options[0]["name"], 
+                    type="value", 
+                    elem_id=self.elem_id("user_settings"), 
+                    allow_custom_value=True,
+                    tooltip="Apply button loads settings\nWrite custom name to enable save\nSave after deleting to commit delate to save file",
+                    size="sm")
+                
+                apply_config = gr.Button(
+                    value="✅",
+                    size="lg",
+                    elem_classes="tool"
                 )
-                reset_to_sd21 = gr.Button(
-                    value="SD2.1 Recommendations",
-                    size="sm",
+                
+                save_to_file = gr.Button(
+                    value="💾",
+                    size="lg",
+                    elem_classes="tool",
+                    interactive=False
                 )
-                reset_to_sdxl = gr.Button(
-                    value="SDXL Recommendations",
-                    size="sm",
+                refresh_settings = gr.Button(
+                    value="🔄",
+                    size="lg",
+                    elem_classes="tool"
                 )
-
+                delete_setting = gr.Button(
+                    value="🗑️",
+                    size="lg",
+                    elem_classes="tool",
+                    interactive=False
+                )
+                
             with gr.Row():
                 start_ratio = gr.Slider(
                     label="Start At Step",
+                    elem_id=self.elem_id("StartAtStep"), 
                     minimum=0,
                     maximum=1,
                     value=0,
@@ -48,6 +135,7 @@ class FreeUScript(scripts.Script):
 
                 stop_ratio = gr.Slider(
                     label="Stop At Step",
+                    elem_id=self.elem_id("StopAtStep"), 
                     minimum=0,
                     maximum=1,
                     value=1,
@@ -55,18 +143,13 @@ class FreeUScript(scripts.Script):
 
                 transition_smoothness = gr.Slider(
                     label="Transition Smoothness",
+                    elem_id=self.elem_id("TransitionSmoothness"), 
                     minimum=0,
                     maximum=1,
                     value=0,
                 )
 
             flat_components = []
-
-            default_stage_infos = [
-                global_state.StageInfo(1.2, 0.9),
-                global_state.StageInfo(1.4, 0.2),
-                global_state.StageInfo(1, 1),
-            ]
 
             for index in range(global_state.STAGES_COUNT):
                 stage_n = index + 1
@@ -76,6 +159,7 @@ class FreeUScript(scripts.Script):
                     with gr.Row():
                         backbone_scale = gr.Slider(
                             label=f"Backbone {stage_n} Scale",
+                            elem_id=self.elem_id(f"Backbone{stage_n}Scale"), 
                             minimum=-1,
                             maximum=3,
                             value=default_stage_info.backbone_factor,
@@ -84,6 +168,7 @@ class FreeUScript(scripts.Script):
 
                         backbone_offset = gr.Slider(
                             label=f"Backbone {stage_n} Offset",
+                            elem_id=self.elem_id(f"Backbone{stage_n}Offset"), 
                             minimum=0,
                             maximum=1,
                             value=default_stage_info.backbone_offset,
@@ -92,6 +177,7 @@ class FreeUScript(scripts.Script):
 
                         backbone_width = gr.Slider(
                             label=f"Backbone {stage_n} Width",
+                            elem_id=self.elem_id(f"Backbone{stage_n}Width"),
                             minimum=0,
                             maximum=1,
                             value=default_stage_info.backbone_width,
@@ -101,6 +187,7 @@ class FreeUScript(scripts.Script):
                     with gr.Row():
                         skip_scale = gr.Slider(
                             label=f"Skip {stage_n} Scale",
+                            elem_id=self.elem_id(f"Skip{stage_n}Scale"),
                             minimum=-1,
                             maximum=3,
                             value=default_stage_info.skip_factor,
@@ -109,6 +196,7 @@ class FreeUScript(scripts.Script):
 
                         skip_high_end_scale = gr.Slider(
                             label=f"Skip {stage_n} High End Scale",
+                            elem_id=self.elem_id(f"Skip{stage_n}HighEndScale"),
                             minimum=-1,
                             maximum=3,
                             value=default_stage_info.skip_high_end_factor,
@@ -117,6 +205,7 @@ class FreeUScript(scripts.Script):
 
                         skip_cutoff = gr.Slider(
                             label=f"Skip {stage_n} Cutoff",
+                            elem_id=self.elem_id(f"Skip{stage_n}Cutoff"),
                             minimum=0.0,
                             maximum=1.0,
                             value=default_stage_info.skip_cutoff,
@@ -131,45 +220,68 @@ class FreeUScript(scripts.Script):
                     skip_cutoff,
                     skip_high_end_scale,
                 ])
+        
+        def user_settings_change(user_settings_name):
+            user_settings = self.get_index_by_name(user_settings_name, all_options)
+            start = all_options[user_settings]["start"]
+            stop = all_options[user_settings]["stop"]
+            smooth = all_options[user_settings]["smooth"]
+            flat = all_options[user_settings]["freeu"]
+            return (gr.Slider.update(value=start), gr.Slider.update(value=stop), gr.Slider.update(value=smooth), *flat)
+            
+        apply_config.click(user_settings_change, inputs=[user_settings_name], outputs=[start_ratio, stop_ratio, transition_smoothness, *flat_components])
+        
+        def onSettingChange(user_settings_name):
+            user_settings = self.get_index_by_name(user_settings_name, all_options)
+            can_save = True
+            if user_settings is not None and user_settings >= 0:
+                can_save = all_options[user_settings]["SystemDefault"] != True
+                return (gr.Button.update(interactive=True),gr.Button.update(interactive=can_save),gr.Button.update(interactive=can_save))
+            else:
+                return (gr.Button.update(interactive=False),gr.Button.update(interactive=False),gr.Button.update(interactive=can_save))
 
+        user_settings_name.change(fn=onSettingChange, inputs=[user_settings_name], outputs=[apply_config,delete_setting, save_to_file])
 
-        sd21_default_stage_infos = [
-            global_state.StageInfo(1.1, 0.9),
-            global_state.StageInfo(1.2, 0.2),
-            global_state.StageInfo(1, 1),
-        ]
-        sdxl_default_stage_infos = [
-            global_state.StageInfo(1.1, 0.6),
-            global_state.StageInfo(1.2, 0.4),
-            global_state.StageInfo(1, 1),
-        ]
+        def onSaveClick(user_settings_name, start_ratio, stop_ratio, transition_smoothness,*flat_components):
+            current_setting = {"name": user_settings_name, "freeu": flat_components,
+                "SystemDefault": False, "start": start_ratio, "stop": stop_ratio, "smooth":transition_smoothness}
 
-        reset_to_defaults.click(
-            fn=lambda: [
-                v
-                for stage_info in default_stage_infos
-                for v in stage_info.to_dict(include_default=True).values()
-            ],
-            outputs=flat_components,
+            user_settings = self.get_index_by_name(user_settings_name, all_options)
+            if user_settings >= 0:
+                all_options[user_settings] = current_setting
+                user_options[user_settings - len(freeu_options)] = current_setting
+            else:
+                user_options.append(current_setting)
+                all_options.append(current_setting)
+
+            self.save_function(user_options)
+            
+            return (gr.Dropdown.update(value=user_settings_name, choices=[x["name"] for x in all_options]), gr.Button.update(interactive=True), gr.Button.update(interactive=True))
+
+        save_to_file.click(fn=onSaveClick, 
+            inputs=[user_settings_name, start_ratio, stop_ratio, transition_smoothness, *flat_components], outputs=[user_settings_name, apply_config, delete_setting]
         )
 
-        reset_to_sd21.click(
-            fn=lambda: [
-                v
-                for stage_info in sd21_default_stage_infos
-                for v in stage_info.to_dict(include_default=True).values()
-            ],
-            outputs=flat_components,
-        )
+        def onDeleteClick(user_settings_name):            
+            user_settings = self.get_index_by_name(user_settings_name, all_options)
+            del all_options[user_settings]
+            del user_options[user_settings - len(freeu_options)]
+            self.save_function(user_options)
+            return (gr.Dropdown.update(value=all_options[0]["name"], choices=[x["name"] for x in all_options]),
+                    gr.Button.update(interactive=True),gr.Button.update(interactive=False),gr.Button.update(interactive=False))
+        
+        delete_setting.click(fn=onDeleteClick, inputs=[user_settings_name], outputs=[user_settings_name, apply_config, save_to_file, delete_setting])
 
-        reset_to_sdxl.click(
-            fn=lambda: [
-                v
-                for stage_info in sdxl_default_stage_infos
-                for v in stage_info.to_dict(include_default=True).values()
-            ],
-            outputs=flat_components,
-        )
+        def onRefreshClick():
+            user_options.clear()
+            all_options.clear()
+            user_options.extend(self.load_function())
+            all_options.extend(freeu_options)
+            all_options.extend(user_options)
+            return (gr.Dropdown.update(value=all_options[0]["name"], choices=[x["name"] for x in all_options]),
+                    gr.Button.update(interactive=True),gr.Button.update(interactive=False),gr.Button.update(interactive=False))
+
+        refresh_settings.click(fn=onRefreshClick, outputs=[user_settings_name, apply_config, save_to_file, delete_setting])        
 
         schedule_infotext = gr.HTML(visible=False, interactive=False)
         stages_infotext = gr.HTML(visible=False, interactive=False)
