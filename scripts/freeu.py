@@ -86,7 +86,7 @@ class FreeUScript(scripts.Script):
         all_options.extend(user_options)
 
         with gr.Accordion(open=False, label=self.title()):
-            with gr.Row(margin="0.5em"):
+            with gr.Row():
                 enabled = gr.Checkbox(
                     label="Enable",
                     value=False,
@@ -97,7 +97,7 @@ class FreeUScript(scripts.Script):
                     type="value", 
                     elem_id=self.elem_id("user_settings"), 
                     allow_custom_value=True,
-                    tooltip="Apply button loads settings\nWrite custom name to enable save\nSave after deleting to commit delate to save file",
+                    tooltip="Apply button loads settings\nWrite custom name to enable save\nDelete automatically will save to file",
                     size="sm")
                 
                 apply_config = gr.Button(
