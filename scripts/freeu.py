@@ -18,8 +18,8 @@ class FreeUScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        default_stage_infos = next(iter(global_state.default_presets.values())).stage_infos
         global_state.reload_presets()
+        default_stage_infos = next(iter(global_state.all_presets.values())).stage_infos
 
         with gr.Accordion(open=False, label=self.title()):
             with gr.Row():
@@ -29,25 +29,29 @@ class FreeUScript(scripts.Script):
                 )
                 preset_name = gr.Dropdown(
                     show_label=False,
-                    choices=list(global_state.all_presets.keys()), value=next(iter(global_state.all_presets.keys())),
+                    choices=list(global_state.all_presets.keys()),
+                    value=next(iter(global_state.all_presets.keys())),
                     type="value",
-                    elem_id=self.elem_id("user_settings"),
+                    elem_id=self.elem_id("preset_name"),
                     allow_custom_value=True,
                     tooltip="Apply button loads settings\nWrite custom name to enable save\nDelete automatically will save to file",
                     size="sm",
                 )
 
+                is_custom_preset = preset_name.value not in global_state.default_presets
+                preset_exists = preset_name.value in global_state.all_presets
+
                 apply_preset = gr.Button(
                     value="✅",
                     size="lg",
-                    elem_classes="tool"
+                    elem_classes="tool",
+                    interactive=preset_exists,
                 )
-
                 save_preset = gr.Button(
                     value="💾",
                     size="lg",
                     elem_classes="tool",
-                    interactive=preset_name.value not in global_state.default_presets
+                    interactive=is_custom_preset,
                 )
                 refresh_presets = gr.Button(
                     value="🔄",
@@ -58,7 +62,7 @@ class FreeUScript(scripts.Script):
                     value="🗑️",
                     size="lg",
                     elem_classes="tool",
-                    interactive=preset_name.value not in global_state.default_presets
+                    interactive=is_custom_preset and preset_exists,
                 )
 
             with gr.Row():
