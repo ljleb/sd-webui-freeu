@@ -101,7 +101,6 @@ class FreeUScript(scripts.Script):
                             maximum=3,
                             value=default_stage_info.backbone_factor,
                         )
-                        default_stage_info.backbone_factor = backbone_scale.value
 
                         backbone_offset = gr.Slider(
                             label=f"Backbone {stage_n} Offset",
@@ -110,7 +109,6 @@ class FreeUScript(scripts.Script):
                             maximum=1,
                             value=default_stage_info.backbone_offset,
                         )
-                        default_stage_info.backbone_offset = backbone_offset.value
 
                         backbone_width = gr.Slider(
                             label=f"Backbone {stage_n} Width",
@@ -119,7 +117,6 @@ class FreeUScript(scripts.Script):
                             maximum=1,
                             value=default_stage_info.backbone_width,
                         )
-                        default_stage_info.backbone_width = backbone_width.value
 
                     with gr.Row():
                         skip_scale = gr.Slider(
@@ -129,7 +126,6 @@ class FreeUScript(scripts.Script):
                             maximum=3,
                             value=default_stage_info.skip_factor,
                         )
-                        default_stage_info.skip_factor = skip_scale.value
 
                         skip_high_end_scale = gr.Slider(
                             label=f"Skip {stage_n} High End Scale",
@@ -138,7 +134,6 @@ class FreeUScript(scripts.Script):
                             maximum=3,
                             value=default_stage_info.skip_high_end_factor,
                         )
-                        default_stage_info.skip_high_end_factor = skip_high_end_scale.value
 
                         skip_cutoff = gr.Slider(
                             label=f"Skip {stage_n} Cutoff",
@@ -147,7 +142,6 @@ class FreeUScript(scripts.Script):
                             maximum=1.0,
                             value=default_stage_info.skip_cutoff,
                         )
-                        default_stage_info.skip_cutoff = skip_cutoff.value
 
                 flat_stage_infos.extend([
                     backbone_scale,
