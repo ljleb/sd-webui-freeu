@@ -31,6 +31,7 @@ STAGES_COUNT = 3
 shorthand_re = re.compile(r"^([a-z]{1,2})([0-9]+)$")
 
 xyz_locked_attrs: set = set()
+xyz_locked: bool = False
 current_sampling_step: float = 0
 
 
@@ -76,7 +77,7 @@ class State:
             self.update_attr(k, v)
 
     def update_attr(self, key, value):
-        if key in xyz_locked_attrs:
+        if xyz_locked or key in xyz_locked_attrs:
             return
 
         if match := shorthand_re.match(key):
