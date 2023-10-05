@@ -16,6 +16,7 @@ def patch():
         xyz_module.AxisOption("[FreeU] Start At Step", int_or_float, apply_global_state("start_ratio")),
         xyz_module.AxisOption("[FreeU] Stop At Step", int_or_float, apply_global_state("stop_ratio")),
         xyz_module.AxisOption("[FreeU] Transition Smoothness", int_or_float, apply_global_state("transition_smoothness")),
+        xyz_module.AxisOption("[FreeU] Presets", str, apply_global_preset, choices=choices_preset),
         *[
             opt
             for index in range(global_state.STAGES_COUNT)
@@ -30,6 +31,9 @@ def patch():
         ]
     ])
 
+def apply_global_preset(_p, v, _vs):
+    global_state.instance.__dict__.update(global_state.all_presets[v].__dict__)
+    global_state.xyz_locked = True
 
 def apply_global_state(k):
     def callback(_p, v, _vs):
@@ -61,6 +65,8 @@ def int_or_float(string):
 def choices_bool():
     return ["False", "True"]
 
+def choices_preset():
+    return list(global_state.all_presets.keys())
 
 def find_xyz_module() -> Optional[ModuleType]:
     for data in scripts.scripts_data:
