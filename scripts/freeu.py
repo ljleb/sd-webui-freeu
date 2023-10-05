@@ -341,6 +341,7 @@ class FreeUScript(scripts.Script):
 
         global_state.instance.update(state_update)
         global_state.xyz_locked_attrs.clear()
+        global_state.xyz_locked = False
 
         if not global_state.instance.enable:
             return
