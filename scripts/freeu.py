@@ -1,7 +1,6 @@
 import json
-import os.path
-from modules import scripts, script_callbacks, processing, shared
 import gradio as gr
+from modules import scripts, script_callbacks, processing, shared
 from lib_free_u import global_state, unet, xyz_grid
 
 
@@ -10,9 +9,6 @@ img2img_steps_component = None
 txt2img_steps_callbacks = []
 img2img_steps_callbacks = []
 
-user_options = []
-freeu_options = []
-all_options = []
 
 class FreeUScript(scripts.Script):
     def title(self):
@@ -20,70 +16,10 @@ class FreeUScript(scripts.Script):
 
     def show(self, is_img2img):
         return scripts.AlwaysVisible
-    
-    def load_function(self):
-        path = os.path.join(os.path.dirname(__file__), "user-custom-settings.json")
-        if os.path.exists(path): # check if file exists
-            with open(path, "r") as f:
-                all_options = json.load(f)
-        else: # if file does not exist, return empty array
-            all_options = []
-        return all_options
-
-    def save_function(self, options):
-        path = os.path.join(os.path.dirname(__file__), "user-custom-settings.json")
-        with open(path, "w") as f:
-            json.dump(options, f)
-
-    def get_index_by_name(self, name: str, array: list) -> int:
-        for i in range(len(array)):
-            if array[i]["name"] == name:
-                return i
-        return -1
 
     def ui(self, is_img2img):
-
-        default_stage_infos = [
-            global_state.StageInfo(1.2, 0.9),
-            global_state.StageInfo(1.4, 0.2),
-            global_state.StageInfo(1, 1),
-        ]
-        sd21_default_stage_infos = [
-            global_state.StageInfo(1.1, 0.9),
-            global_state.StageInfo(1.2, 0.2),
-            global_state.StageInfo(1, 1),
-        ]
-        sdxl_default_stage_infos = [
-            global_state.StageInfo(1.1, 0.6),
-            global_state.StageInfo(1.2, 0.4),
-            global_state.StageInfo(1, 1),
-        ]
-
-        user_options.clear()
-        freeu_options.clear()
-        all_options.clear()
-
-        user_options.extend(self.load_function())
-        freeu_options.extend([
-            {"name": "SD1.4 Recommendations", "freeu": [
-                v
-                for stage_info in default_stage_infos
-                for v in stage_info.to_dict(include_default=True).values()
-            ], "SystemDefault": True, "start": 0.2, "stop": 1, "smooth":0},
-            {"name": "SD2.1 Recommendations", "freeu": [
-                v
-                for stage_info in sd21_default_stage_infos
-                for v in stage_info.to_dict(include_default=True).values()
-            ], "SystemDefault": True, "start": 0.2, "stop": 1, "smooth":0},
-            {"name": "SDXL Recommendations", "freeu": [
-                v
-                for stage_info in sdxl_default_stage_infos
-                for v in stage_info.to_dict(include_default=True).values()
-            ], "SystemDefault": True, "start": 0.2, "stop": 1, "smooth":0},
-            ])
-        
-        all_options.extend(freeu_options)
-        all_options.extend(user_options)
+        default_stage_infos = next(iter(global_state.default_presets.values())).stage_infos
+        global_state.reload_presets()
 
         with gr.Accordion(open=False, label=self.title()):
             with gr.Row():
@@ -91,39 +27,40 @@ class FreeUScript(scripts.Script):
                     label="Enable",
                     value=False,
                 )
-                user_settings_name = gr.Dropdown(
+                preset_name = gr.Dropdown(
                     show_label=False,
-                    choices=[x["name"] for x in all_options], value=all_options[0]["name"], 
-                    type="value", 
-                    elem_id=self.elem_id("user_settings"), 
+                    choices=list(global_state.all_presets.keys()), value=next(iter(global_state.all_presets.keys())),
+                    type="value",
+                    elem_id=self.elem_id("user_settings"),
                     allow_custom_value=True,
                     tooltip="Apply button loads settings\nWrite custom name to enable save\nDelete automatically will save to file",
-                    size="sm")
-                
-                apply_config = gr.Button(
+                    size="sm",
+                )
+
+                apply_preset = gr.Button(
                     value="✅",
                     size="lg",
                     elem_classes="tool"
                 )
-                
-                save_to_file = gr.Button(
+
+                save_preset = gr.Button(
                     value="💾",
                     size="lg",
                     elem_classes="tool",
-                    interactive=False
+                    interactive=preset_name.value not in global_state.default_presets
                 )
-                refresh_settings = gr.Button(
+                refresh_presets = gr.Button(
                     value="🔄",
                     size="lg",
                     elem_classes="tool"
                 )
-                delete_setting = gr.Button(
+                delete_preset = gr.Button(
                     value="🗑️",
                     size="lg",
                     elem_classes="tool",
-                    interactive=False
+                    interactive=preset_name.value not in global_state.default_presets
                 )
-                
+
             with gr.Row():
                 start_ratio = gr.Slider(
                     label="Start At Step",
@@ -220,68 +157,103 @@ class FreeUScript(scripts.Script):
                     skip_cutoff,
                     skip_high_end_scale,
                 ])
-        
-        def user_settings_change(user_settings_name):
-            user_settings = self.get_index_by_name(user_settings_name, all_options)
-            start = all_options[user_settings]["start"]
-            stop = all_options[user_settings]["stop"]
-            smooth = all_options[user_settings]["smooth"]
-            flat = all_options[user_settings]["freeu"]
-            return (gr.Slider.update(value=start), gr.Slider.update(value=stop), gr.Slider.update(value=smooth), *flat)
-            
-        apply_config.click(user_settings_change, inputs=[user_settings_name], outputs=[start_ratio, stop_ratio, transition_smoothness, *flat_components])
-        
-        def onSettingChange(user_settings_name):
-            user_settings = self.get_index_by_name(user_settings_name, all_options)
-            can_save = True
-            if user_settings is not None and user_settings >= 0:
-                can_save = all_options[user_settings]["SystemDefault"] != True
-                return (gr.Button.update(interactive=True),gr.Button.update(interactive=can_save),gr.Button.update(interactive=can_save))
-            else:
-                return (gr.Button.update(interactive=False),gr.Button.update(interactive=False),gr.Button.update(interactive=can_save))
 
-        user_settings_name.change(fn=onSettingChange, inputs=[user_settings_name], outputs=[apply_config,delete_setting, save_to_file])
+        def on_preset_name_change(preset_name):
+            is_custom_preset = preset_name not in global_state.default_presets
+            preset_exists = preset_name in global_state.all_presets
+            return (
+                gr.Button.update(interactive=preset_exists),
+                gr.Button.update(interactive=is_custom_preset),
+                gr.Button.update(interactive=is_custom_preset and preset_exists),
+            )
 
-        def onSaveClick(user_settings_name, start_ratio, stop_ratio, transition_smoothness,*flat_components):
-            current_setting = {"name": user_settings_name, "freeu": flat_components,
-                "SystemDefault": False, "start": start_ratio, "stop": stop_ratio, "smooth":transition_smoothness}
-
-            user_settings = self.get_index_by_name(user_settings_name, all_options)
-            if user_settings >= 0:
-                all_options[user_settings] = current_setting
-                user_options[user_settings - len(freeu_options)] = current_setting
-            else:
-                user_options.append(current_setting)
-                all_options.append(current_setting)
-
-            self.save_function(user_options)
-            
-            return (gr.Dropdown.update(value=user_settings_name, choices=[x["name"] for x in all_options]), gr.Button.update(interactive=True), gr.Button.update(interactive=True))
-
-        save_to_file.click(fn=onSaveClick, 
-            inputs=[user_settings_name, start_ratio, stop_ratio, transition_smoothness, *flat_components], outputs=[user_settings_name, apply_config, delete_setting]
+        preset_name.change(
+            fn=on_preset_name_change,
+            inputs=[preset_name],
+            outputs=[apply_preset, save_preset, delete_preset],
         )
 
-        def onDeleteClick(user_settings_name):            
-            user_settings = self.get_index_by_name(user_settings_name, all_options)
-            del all_options[user_settings]
-            del user_options[user_settings - len(freeu_options)]
-            self.save_function(user_options)
-            return (gr.Dropdown.update(value=all_options[0]["name"], choices=[x["name"] for x in all_options]),
-                    gr.Button.update(interactive=True),gr.Button.update(interactive=False),gr.Button.update(interactive=False))
-        
-        delete_setting.click(fn=onDeleteClick, inputs=[user_settings_name], outputs=[user_settings_name, apply_config, save_to_file, delete_setting])
+        def on_apply_click(user_settings_name):
+            preset = global_state.all_presets[user_settings_name]
+            return (
+                gr.Slider.update(value=preset.start_ratio),
+                gr.Slider.update(value=preset.stop_ratio),
+                gr.Slider.update(value=preset.transition_smoothness),
+                *[
+                    gr.update(value=v)
+                    for stage_info in preset.stage_infos
+                    for v in stage_info.to_dict(include_default=True).values()
+                ],
+            )
 
-        def onRefreshClick():
-            user_options.clear()
-            all_options.clear()
-            user_options.extend(self.load_function())
-            all_options.extend(freeu_options)
-            all_options.extend(user_options)
-            return (gr.Dropdown.update(value=all_options[0]["name"], choices=[x["name"] for x in all_options]),
-                    gr.Button.update(interactive=True),gr.Button.update(interactive=False),gr.Button.update(interactive=False))
+        apply_preset.click(
+            fn=on_apply_click,
+            inputs=[preset_name],
+            outputs=[start_ratio, stop_ratio, transition_smoothness, *flat_components],
+        )
 
-        refresh_settings.click(fn=onRefreshClick, outputs=[user_settings_name, apply_config, save_to_file, delete_setting])        
+        def on_save_click(preset_name, start_ratio, stop_ratio, transition_smoothness, *flat_components):
+            global_state.all_presets[preset_name] = global_state.State(
+                stage_infos=flat_components,
+                start_ratio=start_ratio,
+                stop_ratio=stop_ratio,
+                transition_smoothness=transition_smoothness,
+            )
+            global_state.save_presets()
+
+            return (
+                gr.Dropdown.update(choices=list(global_state.all_presets.keys())),
+                gr.Button.update(interactive=True),
+                gr.Button.update(interactive=True),
+            )
+
+        save_preset.click(
+            fn=on_save_click,
+            inputs=[preset_name, start_ratio, stop_ratio, transition_smoothness, *flat_components],
+            outputs=[preset_name, apply_preset, delete_preset],
+        )
+
+        def on_refresh_click(preset_name):
+            global_state.reload_presets()
+            is_custom_preset = preset_name not in global_state.default_presets
+            preset_exists = preset_name in global_state.all_presets
+
+            return (
+                gr.Dropdown.update(value=preset_name, choices=list(global_state.all_presets.keys())),
+                gr.Button.update(interactive=preset_exists),
+                gr.Button.update(interactive=is_custom_preset),
+                gr.Button.update(interactive=is_custom_preset and preset_exists),
+            )
+
+        refresh_presets.click(
+            fn=on_refresh_click,
+            inputs=[preset_name],
+            outputs=[preset_name, apply_preset, save_preset, delete_preset],
+        )
+
+        def on_delete_click(preset_name):
+            preset_name_index = list(global_state.all_presets.keys()).index(preset_name)
+            del global_state.all_presets[preset_name]
+            global_state.save_presets()
+
+            preset_name_index = min(len(global_state.all_presets) - 1, preset_name_index)
+            preset_names = list(global_state.all_presets.keys())
+            preset_name = preset_names[preset_name_index]
+
+            is_custom_preset = preset_name not in global_state.default_presets
+            preset_exists = preset_name in global_state.all_presets
+            return (
+                gr.Dropdown.update(value=preset_name, choices=preset_names),
+                gr.Button.update(interactive=preset_exists),
+                gr.Button.update(interactive=is_custom_preset),
+                gr.Button.update(interactive=is_custom_preset and preset_exists),
+            )
+
+        delete_preset.click(
+            fn=on_delete_click,
+            inputs=[preset_name],
+            outputs=[preset_name, apply_preset, save_preset, delete_preset],
+        )
 
         schedule_infotext = gr.HTML(visible=False, interactive=False)
         stages_infotext = gr.HTML(visible=False, interactive=False)

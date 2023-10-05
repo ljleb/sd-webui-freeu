@@ -1,7 +1,9 @@
 import dataclasses
 import inspect
+import json
+import pathlib
 import re
-from typing import Union, List
+from typing import Union, List, Any
 
 
 @dataclasses.dataclass
@@ -16,7 +18,7 @@ class StageInfo:
 
     def to_dict(self, include_default=False):
         default_stage_info = StageInfo()
-        res = vars(self)
+        res = vars(self).copy()
         for k, v in res.copy().items():
             if not include_default and v == getattr(default_stage_info, k):
                 del res[k]
@@ -38,7 +40,7 @@ class State:
     start_ratio: Union[float, int] = 0.0
     stop_ratio: Union[float, int] = 1.0
     transition_smoothness: float = 0.0
-    stage_infos: List[Union[StageInfo, dict]] = dataclasses.field(default_factory=lambda: [StageInfo() for _ in range(STAGES_COUNT)])
+    stage_infos: List[Union[StageInfo, dict, Any]] = dataclasses.field(default_factory=lambda: [StageInfo() for _ in range(STAGES_COUNT)])
 
     def __post_init__(self):
         self.stage_infos = self.group_stage_infos()
@@ -62,6 +64,12 @@ class State:
             res.append(StageInfo())
 
         return res
+
+    def to_dict(self):
+        result = vars(self).copy()
+        result["stage_infos"] = [stage_info.to_dict() for stage_info in result["stage_infos"]]
+        del result["enable"]
+        return result
 
     def update(self, state):
         for k, v in vars(state).items():
@@ -119,5 +127,65 @@ class State:
 
 
 STATE_ARGS_LEN = len(inspect.getfullargspec(State.__init__)[0]) - 1  # off by one because of self
+PRESETS_PATH = pathlib.Path(__file__).parent.parent / "presets.json"
 
 instance = State()
+default_presets = {
+    "SD1.4 Recommendations": State(
+        stage_infos=[
+            StageInfo(1.2, 0.9),
+            StageInfo(1.4, 0.2),
+            StageInfo(1, 1),
+        ],
+    ),
+    "SD2.1 Recommendations": State(
+        stage_infos=[
+            StageInfo(1.1, 0.9),
+            StageInfo(1.2, 0.2),
+            StageInfo(1, 1),
+        ],
+    ),
+    "SDXL Recommendations": State(
+        stage_infos=[
+            StageInfo(1.1, 0.6),
+            StageInfo(1.2, 0.4),
+            StageInfo(1, 1),
+        ],
+    ),
+}
+all_presets = {}
+
+
+def reload_presets():
+    all_presets.clear()
+    all_presets.update(default_presets)
+    all_presets.update(load_presets())
+
+
+def load_presets():
+    if not PRESETS_PATH.exists():
+        return []
+
+    with open(PRESETS_PATH, "r") as f:
+        return {
+            k: State(**v)
+            for k, v in json.load(f).items()
+        }
+
+
+def save_presets(presets=None):
+    if presets is None:
+        presets = get_user_presets()
+
+    presets = {k: v.to_dict() for k, v in presets.items()}
+
+    with open(PRESETS_PATH, "w") as f:
+        json.dump(presets, f)
+
+
+def get_user_presets():
+    return {
+        k: v
+        for k, v in all_presets.items()
+        if k not in default_presets
+    }
