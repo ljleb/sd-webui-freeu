@@ -86,7 +86,7 @@ class FreeUScript(scripts.Script):
                     value=0,
                 )
 
-            flat_components = []
+            flat_stage_infos = []
 
             for index in range(global_state.STAGES_COUNT):
                 stage_n = index + 1
@@ -149,7 +149,7 @@ class FreeUScript(scripts.Script):
                         )
                         default_stage_info.skip_cutoff = skip_cutoff.value
 
-                flat_components.extend([
+                flat_stage_infos.extend([
                     backbone_scale,
                     skip_scale,
                     backbone_offset,
@@ -189,12 +189,12 @@ class FreeUScript(scripts.Script):
         apply_preset.click(
             fn=on_apply_click,
             inputs=[preset_name],
-            outputs=[start_ratio, stop_ratio, transition_smoothness, *flat_components],
+            outputs=[start_ratio, stop_ratio, transition_smoothness, *flat_stage_infos],
         )
 
-        def on_save_click(preset_name, start_ratio, stop_ratio, transition_smoothness, *flat_components):
+        def on_save_click(preset_name, start_ratio, stop_ratio, transition_smoothness, *flat_stage_infos):
             global_state.all_presets[preset_name] = global_state.State(
-                stage_infos=flat_components,
+                stage_infos=flat_stage_infos,
                 start_ratio=start_ratio,
                 stop_ratio=stop_ratio,
                 transition_smoothness=transition_smoothness,
@@ -209,7 +209,7 @@ class FreeUScript(scripts.Script):
 
         save_preset.click(
             fn=on_save_click,
-            inputs=[preset_name, start_ratio, stop_ratio, transition_smoothness, *flat_components],
+            inputs=[preset_name, start_ratio, stop_ratio, transition_smoothness, *flat_stage_infos],
             outputs=[preset_name, apply_preset, delete_preset],
         )
 
@@ -279,7 +279,7 @@ class FreeUScript(scripts.Script):
         stages_infotext.change(
             fn=self.on_stages_infotext_update,
             inputs=[stages_infotext],
-            outputs=[stages_infotext, enabled, *flat_components],
+            outputs=[stages_infotext, enabled, *flat_stage_infos],
         )
 
         self.infotext_fields = [
@@ -288,7 +288,7 @@ class FreeUScript(scripts.Script):
         ]
         self.paste_field_names = [f for _, f in self.infotext_fields]
 
-        return enabled, start_ratio, stop_ratio, transition_smoothness, *flat_components
+        return enabled, start_ratio, stop_ratio, transition_smoothness, *flat_stage_infos
 
     def on_schedule_infotext_update(self, infotext, steps):
         if not infotext:
