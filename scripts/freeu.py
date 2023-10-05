@@ -64,7 +64,7 @@ class FreeUScript(scripts.Script):
             with gr.Row():
                 start_ratio = gr.Slider(
                     label="Start At Step",
-                    elem_id=self.elem_id("StartAtStep"), 
+                    elem_id=self.elem_id("start_at_step"),
                     minimum=0,
                     maximum=1,
                     value=0,
@@ -72,7 +72,7 @@ class FreeUScript(scripts.Script):
 
                 stop_ratio = gr.Slider(
                     label="Stop At Step",
-                    elem_id=self.elem_id("StopAtStep"), 
+                    elem_id=self.elem_id("stop_at_step"),
                     minimum=0,
                     maximum=1,
                     value=1,
@@ -80,7 +80,7 @@ class FreeUScript(scripts.Script):
 
                 transition_smoothness = gr.Slider(
                     label="Transition Smoothness",
-                    elem_id=self.elem_id("TransitionSmoothness"), 
+                    elem_id=self.elem_id("transition_smoothness"),
                     minimum=0,
                     maximum=1,
                     value=0,
@@ -96,7 +96,7 @@ class FreeUScript(scripts.Script):
                     with gr.Row():
                         backbone_scale = gr.Slider(
                             label=f"Backbone {stage_n} Scale",
-                            elem_id=self.elem_id(f"Backbone{stage_n}Scale"), 
+                            elem_id=self.elem_id(f"backbone_scale_{stage_n}"),
                             minimum=-1,
                             maximum=3,
                             value=default_stage_info.backbone_factor,
@@ -104,7 +104,7 @@ class FreeUScript(scripts.Script):
 
                         backbone_offset = gr.Slider(
                             label=f"Backbone {stage_n} Offset",
-                            elem_id=self.elem_id(f"Backbone{stage_n}Offset"), 
+                            elem_id=self.elem_id(f"backbone_offset_{stage_n}"),
                             minimum=0,
                             maximum=1,
                             value=default_stage_info.backbone_offset,
@@ -112,7 +112,7 @@ class FreeUScript(scripts.Script):
 
                         backbone_width = gr.Slider(
                             label=f"Backbone {stage_n} Width",
-                            elem_id=self.elem_id(f"Backbone{stage_n}Width"),
+                            elem_id=self.elem_id(f"backbone_width_{stage_n}"),
                             minimum=0,
                             maximum=1,
                             value=default_stage_info.backbone_width,
@@ -121,7 +121,7 @@ class FreeUScript(scripts.Script):
                     with gr.Row():
                         skip_scale = gr.Slider(
                             label=f"Skip {stage_n} Scale",
-                            elem_id=self.elem_id(f"Skip{stage_n}Scale"),
+                            elem_id=self.elem_id(f"skip_scale_{stage_n}"),
                             minimum=-1,
                             maximum=3,
                             value=default_stage_info.skip_factor,
@@ -129,7 +129,7 @@ class FreeUScript(scripts.Script):
 
                         skip_high_end_scale = gr.Slider(
                             label=f"Skip {stage_n} High End Scale",
-                            elem_id=self.elem_id(f"Skip{stage_n}HighEndScale"),
+                            elem_id=self.elem_id(f"skip_high_end_scale_{stage_n}"),
                             minimum=-1,
                             maximum=3,
                             value=default_stage_info.skip_high_end_factor,
@@ -137,7 +137,7 @@ class FreeUScript(scripts.Script):
 
                         skip_cutoff = gr.Slider(
                             label=f"Skip {stage_n} Cutoff",
-                            elem_id=self.elem_id(f"Skip{stage_n}Cutoff"),
+                            elem_id=self.elem_id(f"skip_cutoff_{stage_n}"),
                             minimum=0.0,
                             maximum=1.0,
                             value=default_stage_info.skip_cutoff,
