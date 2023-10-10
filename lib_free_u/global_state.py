@@ -3,6 +3,7 @@ import inspect
 import json
 import pathlib
 import re
+import sys
 from typing import Union, List, Any
 
 
@@ -106,8 +107,11 @@ class State:
 def apply_xyz():
     global instance
 
-    if "preset" in xyz_attrs:
-        instance = all_presets[xyz_attrs["preset"]].copy()
+    if preset_key := xyz_attrs.get("preset"):
+        if preset := all_presets.get(preset_key):
+            instance = preset.copy()
+        else:
+            print("[sd-webui-freeu]", f"XYZ Preset '{preset_key}' does not exist", file=sys.stderr)
 
     for k, v in xyz_attrs.items():
         if k == "preset":
