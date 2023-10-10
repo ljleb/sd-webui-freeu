@@ -13,7 +13,7 @@ def patch():
 
     xyz_module.axis_options.extend([
         xyz_module.AxisOption("[FreeU] Enabled", str_to_bool, apply_global_state("enable"), choices=choices_bool),
-        xyz_module.AxisOption("[FreeU] Preset", str, apply_global_state("preset"), choices=lambda: list(global_state.all_presets.keys())),
+        xyz_module.AxisOption("[FreeU] Preset", str, apply_global_state("preset"), choices=choices_preset),
         xyz_module.AxisOption("[FreeU] Start At Step", int_or_float, apply_global_state("start_ratio")),
         xyz_module.AxisOption("[FreeU] Stop At Step", int_or_float, apply_global_state("stop_ratio")),
         xyz_module.AxisOption("[FreeU] Transition Smoothness", int_or_float, apply_global_state("transition_smoothness")),
@@ -60,6 +60,10 @@ def int_or_float(string):
 
 def choices_bool():
     return ["False", "True"]
+
+
+def choices_preset():
+    return list(global_state.all_presets.keys())
 
 
 def find_xyz_module() -> Optional[ModuleType]:
