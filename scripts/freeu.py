@@ -330,18 +330,20 @@ class FreeUScript(scripts.Script):
         p: processing.StableDiffusionProcessing,
         *args
     ):
-        global_state.current_sampling_step = 0
         if isinstance(args[0], dict):
-            state_update = global_state.State(**args[0])
+            global_state.instance = global_state.State(**args[0])
         elif isinstance(args[0], bool):
-            i = global_state.STATE_ARGS_LEN - 1
-            state_update = global_state.State(args[0], *[float(n) for n in args[1:i]], args[i:])
+            stage_infos_begin = global_state.STATE_ARGS_LEN - 1
+            global_state.instance = global_state.State(
+                args[0],
+                *[float(n) for n in args[1:stage_infos_begin]],
+                args[stage_infos_begin:],
+            )
         else:
             raise TypeError(f"Unrecognized args sequence starting with type {type(args[0])}")
 
-        global_state.instance.update(state_update)
-        global_state.xyz_locked_attrs.clear()
-
+        global_state.apply_xyz()
+        global_state.xyz_attrs.clear()
         if not global_state.instance.enable:
             return
 
@@ -358,7 +360,7 @@ class FreeUScript(scripts.Script):
             str(global_state.instance.transition_smoothness),
         ])
 
-    def postprocess_batch(self, p, *args, **kwargs):
+    def process_batch(self, p, *args, **kwargs):
         global_state.current_sampling_step = 0
 
 
