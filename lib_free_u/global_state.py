@@ -110,7 +110,7 @@ def apply_xyz():
     if preset_key := xyz_attrs.get("preset"):
         if preset := all_presets.get(preset_key):
             instance = preset.copy()
-        else:
+        elif preset_key != "UI Settings":
             print("[sd-webui-freeu]", f"XYZ Preset '{preset_key}' does not exist", file=sys.stderr)
 
     for k, v in xyz_attrs.items():
