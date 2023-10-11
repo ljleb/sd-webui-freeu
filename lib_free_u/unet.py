@@ -20,9 +20,10 @@ def patch():
     cn_status = "enabled"
     try:
         import scripts.hook as controlnet_hook
-        controlnet_hook.th.cat = functools.partial(free_u_cat_hijack, original_function=controlnet_hook.th.cat)
     except ImportError:
         cn_status = "disabled"
+    else:
+        controlnet_hook.th.cat = functools.partial(free_u_cat_hijack, original_function=controlnet_hook.th.cat)
     finally:
         for p in cn_script_paths:
             sys.path.remove(p)
