@@ -63,8 +63,10 @@ def choices_bool():
 
 
 def choices_preset():
-    return list(global_state.all_presets.keys())
-
+    presets = list(global_state.all_presets.keys())
+    presets.insert(0, "UI Settings")
+    return presets
+    
 
 def find_xyz_module() -> Optional[ModuleType]:
     for data in scripts.scripts_data:
