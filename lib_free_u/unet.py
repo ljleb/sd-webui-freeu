@@ -60,7 +60,7 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
         if region_inverted:
             mask = ~mask
 
-        h[:, mask] *= backbone_scale(
+        h[:, mask] *= get_backbone_scale(
             h,
             backbone_factor=lerp(1, stage_info.backbone_factor, schedule_ratio),
         )
@@ -74,7 +74,7 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
     return original_function([h, h_skip], *args, **kwargs)
 
 
-def backbone_scale(h, backbone_factor):
+def get_backbone_scale(h, backbone_factor):
     if global_state.instance.version == "1":
         return backbone_factor
 
