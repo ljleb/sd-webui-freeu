@@ -23,10 +23,19 @@ class FreeUScript(scripts.Script):
 
         with gr.Accordion(open=False, label=self.title()):
             with gr.Row():
-                enabled = gr.Checkbox(
-                    label="Enable",
-                    value=False,
-                )
+                with gr.Row():
+                    enabled = gr.Checkbox(
+                        label="Enable",
+                        value=False,
+                    )
+
+                    version = gr.Dropdown(
+                        show_label=False,
+                        elem_id=self.elem_id("version"),
+                        choices=list(global_state.all_versions.keys()),
+                        value=next(iter(reversed(global_state.all_versions.keys()))),
+                    )
+
                 preset_name = gr.Dropdown(
                     show_label=False,
                     choices=list(global_state.all_presets.keys()),
@@ -255,6 +264,7 @@ class FreeUScript(scripts.Script):
 
         schedule_infotext = gr.HTML(visible=False, interactive=False)
         stages_infotext = gr.HTML(visible=False, interactive=False)
+        version_infotext = gr.HTML(visible=False, interactive=False)
 
         def register_schedule_infotext_change(steps_component):
             schedule_infotext.change(
@@ -280,13 +290,20 @@ class FreeUScript(scripts.Script):
             outputs=[stages_infotext, enabled, *flat_stage_infos],
         )
 
+        version_infotext.change(
+            fn=self.on_version_infotext_update,
+            inputs=[version_infotext],
+            outputs=[version_infotext, version]
+        )
+
         self.infotext_fields = [
             (schedule_infotext, "FreeU Schedule"),
             (stages_infotext, "FreeU Stages"),
+            (version_infotext, "FreeU Version"),
         ]
         self.paste_field_names = [f for _, f in self.infotext_fields]
 
-        return enabled, start_ratio, stop_ratio, transition_smoothness, *flat_stage_infos
+        return enabled, start_ratio, stop_ratio, transition_smoothness, version, *flat_stage_infos
 
     def on_schedule_infotext_update(self, infotext, steps):
         if not infotext:
@@ -325,6 +342,15 @@ class FreeUScript(scripts.Script):
             )
         )
 
+    def on_version_infotext_update(self, infotext):
+        if not infotext:
+            return (gr.skip(),) * 2
+
+        return (
+            gr.update(value=""),
+            gr.update(value=global_state.reversed_all_versions.get(infotext, infotext)),
+        )
+
     def process(
         self,
         p: processing.StableDiffusionProcessing,
@@ -336,7 +362,8 @@ class FreeUScript(scripts.Script):
             stage_infos_begin = global_state.STATE_ARGS_LEN - 1
             global_state.instance = global_state.State(
                 args[0],
-                *[float(n) for n in args[1:stage_infos_begin]],
+                *[float(n) for n in args[1:stage_infos_begin-1]],
+                args[stage_infos_begin-1],
                 args[stage_infos_begin:],
             )
         else:
@@ -359,6 +386,7 @@ class FreeUScript(scripts.Script):
             str(global_state.instance.stop_ratio),
             str(global_state.instance.transition_smoothness),
         ])
+        p.extra_generation_params["FreeU Version"] = global_state.instance.version
 
     def process_batch(self, p, *args, **kwargs):
         global_state.current_sampling_step = 0

@@ -33,6 +33,14 @@ class StageInfo:
 STAGE_INFO_ARGS_LEN = len(inspect.getfullargspec(StageInfo.__init__)[0]) - 1  # off by one because of self
 STAGES_COUNT = 3
 shorthand_re = re.compile(r"^([a-z]{1,2})([0-9]+)$")
+all_versions = {
+    f"Version {version+1}": str(version+1)
+    for version in range(2)
+}
+reversed_all_versions = {
+    v: k
+    for k, v in all_versions.items()
+}
 
 xyz_attrs: dict = {}
 current_sampling_step: float = 0
@@ -44,10 +52,12 @@ class State:
     start_ratio: Union[float, int] = 0.0
     stop_ratio: Union[float, int] = 1.0
     transition_smoothness: float = 0.0
+    version: str = "1"
     stage_infos: List[Union[StageInfo, dict, Any]] = dataclasses.field(default_factory=lambda: [StageInfo() for _ in range(STAGES_COUNT)])
 
     def __post_init__(self):
         self.stage_infos = self.group_stage_infos()
+        self.version = self.format_version()
 
     def group_stage_infos(self):
         res = []
@@ -68,6 +78,12 @@ class State:
             res.append(StageInfo())
 
         return res
+
+    def format_version(self):
+        if self.version not in reversed_all_versions:
+            return all_versions.get(self.version, "1")
+
+        return self.version
 
     def to_dict(self):
         result = vars(self).copy()
