@@ -1,5 +1,7 @@
 import json
 import gradio as gr
+import torch
+
 from modules import scripts, script_callbacks, processing, shared
 from lib_free_u import global_state, unet, xyz_grid
 
@@ -33,7 +35,7 @@ class FreeUScript(scripts.Script):
                         show_label=False,
                         elem_id=self.elem_id("version"),
                         choices=list(global_state.all_versions.keys()),
-                        value=next(iter(reversed(global_state.all_versions.keys()))),
+                        value=list(global_state.all_versions.keys())[1],
                     )
 
                 preset_name = gr.Dropdown(

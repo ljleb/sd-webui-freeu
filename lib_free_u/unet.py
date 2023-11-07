@@ -75,16 +75,59 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
 
 
 def get_backbone_scale(h, backbone_factor):
-    if global_state.instance.version == "1":
+    if global_state.instance.version == "1" or backbone_factor == 1:
         return backbone_factor
 
-    #if global_state.instance.version == "2":
-    features_mean = h.mean(1, keepdim=True)
+    means = h.mean(1, keepdim=True)
     batch_dims = h.shape[0]
-    features_max, _ = torch.max(features_mean.view(batch_dims, -1), dim=-1, keepdim=True)
-    features_min, _ = torch.min(features_mean.view(batch_dims, -1), dim=-1, keepdim=True)
-    hidden_mean = (features_mean - features_min.unsqueeze(2).unsqueeze(3)) / (features_max - features_min).unsqueeze(2).unsqueeze(3)
+
+    if global_state.instance.version == "2":
+        means_min, _ = torch.min(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+        means_max, _ = torch.max(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+        hidden_mean = (means - means_min) / (means_max - means_min)
+    else:
+        if global_state.instance.version == "3":
+            means_mean = torch.mean(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_min, _ = torch.min((means - means_mean).view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_max, _ = torch.max((means - means_mean).view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            hidden_mean = torch.where(means < means_mean, (means - means_mean) / means_min, (means - means_mean) / means_max)
+        elif global_state.instance.version == "4":
+            means_min, _ = torch.min(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_max, _ = torch.max(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            hidden_mean = torch.where(means < 0, means / means_min, means / means_max)
+        elif global_state.instance.version == "5":
+            means_min, _ = torch.min(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_max, _ = torch.max(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_mean = (means_max + means_min) / 2
+            means_min, _ = torch.min((means - means_mean).view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_max, _ = torch.max((means - means_mean).view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            hidden_mean = torch.where(means < means_mean, (means - means_mean) / means_min, (means - means_mean) / means_max)
+        elif global_state.instance.version == "6":
+            means_mean = torch.mean(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_min, _ = torch.min(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_max, _ = torch.max(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            hidden_mean = poly_from_stats(means_max, means_min, means_mean)(means)
+        elif global_state.instance.version == "7":
+            means_min, _ = torch.min(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_max, _ = torch.max(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            hidden_mean = poly_from_stats(means_max, means_min, 0)(means)
+        else:
+            means_min, _ = torch.min(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            means_max, _ = torch.max(means.view(batch_dims, -1, 1, 1), dim=1, keepdim=True)
+            hidden_mean = poly_from_stats(means_max, means_min, (means_min + means_max) / 2)(means)
+
     return 1 + (backbone_factor - 1) * hidden_mean
+
+
+def poly_from_stats(maximum, minimum, mean):
+    a = 1 / (maximum * mean - maximum * minimum - mean ** 2 + mean * minimum)
+    b = (-maximum - minimum) / (maximum * mean - maximum * minimum - mean ** 2 + mean * minimum)
+    c = (maximum * mean - mean ** 2 + mean * minimum) / (maximum * mean - maximum * minimum - mean ** 2 + mean * minimum)
+
+    def poly(x):
+        return a*x**2 + b*x + c
+
+    return poly
 
 
 def filter_skip(x, threshold, scale, scale_high):

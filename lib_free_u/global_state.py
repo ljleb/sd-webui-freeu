@@ -35,7 +35,7 @@ STAGES_COUNT = 3
 shorthand_re = re.compile(r"^([a-z]{1,2})([0-9]+)$")
 all_versions = {
     f"Version {version+1}": str(version+1)
-    for version in range(2)
+    for version in range(8)
 }
 reversed_all_versions = {
     v: k
