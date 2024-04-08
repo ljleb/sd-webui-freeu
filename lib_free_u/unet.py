@@ -2,7 +2,7 @@ import functools
 import math
 import pathlib
 import sys
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 from lib_free_u import global_state
 from modules import scripts, shared
 from modules.sd_hijack_unet import th
@@ -92,7 +92,7 @@ def filter_skip(x, threshold, scale, scale_high):
         return x
 
     fft_device = x.device
-    if no_gpu_complex_support():
+    if not is_gpu_complex_supported(x):
         fft_device = "cpu"
 
     # FFT
@@ -167,7 +167,17 @@ def lerp(a, b, r):
     return (1-r)*a + r*b
 
 
-def no_gpu_complex_support():
+gpu_complex_support: Optional[bool] = None
+def is_gpu_complex_supported(x):
+    global gpu_complex_support
+
+    if x.is_cpu:
+        return True
+
+    if gpu_complex_support is not None:
+        return gpu_complex_support
+
+    # catch known cases in advance
     mps_available = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
     try:
         import torch_directml
@@ -176,4 +186,12 @@ def no_gpu_complex_support():
     else:
         dml_available = torch_directml.is_available()
 
-    return mps_available or dml_available
+    gpu_complex_support = not (mps_available or dml_available)
+    if gpu_complex_support:
+        # try filter_skip fft to make sure it is viable on the gpu
+        try:
+            torch.fft.fftn(x.float(), dim=(-2, -1))
+        except RuntimeError:
+            gpu_complex_support = False
+
+    return gpu_complex_support
