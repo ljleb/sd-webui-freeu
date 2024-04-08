@@ -83,7 +83,7 @@ class State:
         if self.version not in reversed_all_versions:
             return all_versions.get(self.version, "1")
 
-        return self.version
+        return str(self.version)
 
     def to_dict(self):
         result = vars(self).copy()
