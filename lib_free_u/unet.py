@@ -54,16 +54,19 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
         stage_info = None
 
     if stage_info is not None:
-        redion_begin, region_end, region_inverted = ratio_to_region(stage_info.backbone_width, stage_info.backbone_offset, dims)
-        mask = torch.arange(dims)
-        mask = (redion_begin <= mask) & (mask <= region_end)
+        region_begin, region_end, region_inverted = ratio_to_region(stage_info.backbone_width, stage_info.backbone_offset, dims)
+        mask = torch.arange(dims, device=h.device)
+        mask = (region_begin <= mask) & (mask <= region_end)
         if region_inverted:
             mask = ~mask
+        mask = mask.reshape(1, -1, 1, 1).to(h.dtype)
 
-        h[:, mask] *= get_backbone_scale(
+        scale = get_backbone_scale(
             h,
             backbone_factor=lerp(1, stage_info.backbone_factor, schedule_ratio),
         )
+        h *= mask * scale + (1 - mask)
+
         h_skip = filter_skip(
             h_skip,
             threshold=stage_info.skip_cutoff,
@@ -96,7 +99,7 @@ def filter_skip(x, threshold, scale, scale_high):
         fft_device = "cpu"
 
     # FFT
-    x_freq = torch.fft.fftn(x.to(fft_device).float(), dim=(-2, -1))
+    x_freq = torch.fft.fftn(x.to(fft_device, dtype=torch.float32), dim=(-2, -1))
     x_freq = torch.fft.fftshift(x_freq, dim=(-2, -1))
 
     B, C, H, W = x_freq.shape
