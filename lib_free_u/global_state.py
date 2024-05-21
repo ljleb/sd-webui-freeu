@@ -143,22 +143,22 @@ instance = State()
 default_presets = {
     "SD1.4 Recommendations": State(
         stage_infos=[
-            StageInfo(1.2, 0.9),
+            StageInfo(1.3, 0.9),
             StageInfo(1.4, 0.2),
             StageInfo(1, 1),
         ],
     ),
     "SD2.1 Recommendations": State(
         stage_infos=[
-            StageInfo(1.1, 0.9),
-            StageInfo(1.2, 0.2),
+            StageInfo(1.4, 0.9),
+            StageInfo(1.6, 0.2),
             StageInfo(1, 1),
         ],
     ),
     "SDXL Recommendations": State(
         stage_infos=[
-            StageInfo(1.1, 0.6),
-            StageInfo(1.2, 0.4),
+            StageInfo(1.3, 0.9),
+            StageInfo(1.4, 0.2),
             StageInfo(1, 1),
         ],
     ),
