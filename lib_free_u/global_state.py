@@ -190,7 +190,7 @@ def save_presets(presets=None):
     presets = {k: v.to_dict() for k, v in presets.items()}
 
     with open(PRESETS_PATH, "w") as f:
-        json.dump(presets, f)
+        json.dump(presets, f, indent=4)
 
 
 def get_user_presets():
