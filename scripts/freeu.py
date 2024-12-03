@@ -44,7 +44,6 @@ class FreeUScript(scripts.Script):
                     elem_id=self.elem_id("preset_name"),
                     allow_custom_value=True,
                     tooltip="Apply button loads settings\nWrite custom name to enable save\nDelete automatically will save to file",
-                    size="sm",
                 )
 
                 is_custom_preset = preset_name.value not in global_state.default_presets
