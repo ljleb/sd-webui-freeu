@@ -63,7 +63,7 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
 
         scale = get_backbone_scale(
             h,
-            backbone_factor=lerp(1, stage_info.backbone_factor, schedule_ratio),
+            base_scale=lerp(1, stage_info.backbone_factor, schedule_ratio),
         )
         h *= mask * scale + (1 - mask)
 
@@ -77,9 +77,9 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
     return original_function([h, h_skip], *args, **kwargs)
 
 
-def get_backbone_scale(h, backbone_factor):
+def get_backbone_scale(h, base_scale):
     if global_state.instance.version == "1":
-        return backbone_factor
+        return base_scale
 
     #if global_state.instance.version == "2":
     features_mean = h.mean(1, keepdim=True)
@@ -87,7 +87,7 @@ def get_backbone_scale(h, backbone_factor):
     features_max, _ = torch.max(features_mean.view(batch_dims, -1), dim=-1, keepdim=True)
     features_min, _ = torch.min(features_mean.view(batch_dims, -1), dim=-1, keepdim=True)
     hidden_mean = (features_mean - features_min.unsqueeze(2).unsqueeze(3)) / (features_max - features_min).unsqueeze(2).unsqueeze(3)
-    return 1 + (backbone_factor - 1) * hidden_mean
+    return 1 + (base_scale - 1) * hidden_mean
 
 
 def filter_skip(x, threshold, scale, scale_high):
